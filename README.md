@@ -38,8 +38,7 @@ stix_graph.save_graph("threat-actor-leveraging-attack-patterns-and-malware.html"
 
 PySTIXView can be used also in Jupyter Notebook:
 
-![](_media/jupyter_example.png)
-
+![](https://raw.githubusercontent.com/vincenzocaputo/PySTIXView/main/_media/jupyter_example.png)
 
 ## Credits
 
