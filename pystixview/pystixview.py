@@ -34,7 +34,10 @@ class PySTIXView:
         self.__notebook = notebook
         self.__height = height
         self.__width = width
-        self.__network = Network(height, width, directed=True, notebook=notebook, select_menu=select_menu, filter_menu=filter_menu)
+        if notebook:
+            self.__network = Network(height, width, directed=True, notebook=notebook, select_menu=select_menu, filter_menu=filter_menu, cdn_resources='in_line')
+        else:
+            self.__network = Network(height, width, directed=True, notebook=notebook, select_menu=select_menu, filter_menu=filter_menu)
         self.__icons_path = Path(os.path.dirname(__file__)) / 'icons'
 
         STYLES = ['square-flat', 'square-dark', 'square-lite', 'noback-dark', 'noback-flat', 'round-flat']
