@@ -27,7 +27,7 @@ python3 setup.py install
 
 ## Usage
 
-Below is a simple example to create a graph from the STIX2 Bundle [Threat Actor Leveraging Attack Patterns and Malware](https://oasis-open.github.io/cti-documentation/examples/threat-actor-leveraging-attack-patterns-and-malware). (The JSON file is available at [](https://github.com/oasis-open/cti-documentation/blob/main/examples/example_json/threat-actor-leveraging-attack-patterns-and-malware.json))
+Below is a simple example to create a graph from the STIX2 Bundle [Threat Actor Leveraging Attack Patterns and Malware](https://oasis-open.github.io/cti-documentation/examples/threat-actor-leveraging-attack-patterns-and-malware). (The JSON file is available at https://github.com/oasis-open/cti-documentation/blob/main/examples/example_json/threat-actor-leveraging-attack-patterns-and-malware.json)
 
 ```python
 from pystixview import PySTIXView
