@@ -11,6 +11,7 @@ import os
 import json
 import base64
 import warnings
+import re
 
 class PySTIXView:
     """Class to create a graph representing STIX objects and relationships
@@ -116,11 +117,10 @@ class PySTIXView:
         """
 
         if custom_type not in self.__custom_types.keys():
-            self.__custom_types[custom_type] = dict()
             if node_icon:
                 if isinstance(node_icon, str):
                     if node_icon.startswith('http'):
-                        self.__custom_types[custom_type] = node_icon
+                        self.__custom_types[custom_type] = {'image': node_icon}
                     else:
                         b64_icon = self.__image_to_base64(node_icon)
                         self.__custom_types[custom_type] = {'image': b64_icon}
@@ -151,6 +151,7 @@ class PySTIXView:
         :raises TypeError: If an invalid STIX Domain Object is provided
         """
 
+        node_img = None
         if isinstance(sdo, dict) or isinstance(sdo, str):
             sdo = parsing.parse(sdo, allow_custom=True)
 
@@ -164,7 +165,7 @@ class PySTIXView:
                         node_img = self.__custom_types[stix_type]['image']
                     elif 'color' in self.__custom_types[stix_type].keys():
                         node_shape = "dot"
-                        node_img = self.__custom_types[stix_type]['color']
+                        node_color = self.__custom_types[stix_type]['color']
                     else:
                         raise KeyError("No image nor color found the custom type {stix_type}")
                 else:
@@ -192,7 +193,7 @@ class PySTIXView:
         else:
             node_title = sdo.serialize(pretty=True)
 
-        if icon_path.exists():
+        if node_img:
             self.__network.add_node(node_id,
                                     label=node_label,
                                     shape=node_shape,
@@ -305,8 +306,6 @@ class PySTIXView:
 
         if buttons_filter:
             self.__network.show_buttons(filter_=buttons_filter)
-        if show_physics_buttons:
-            self.__network.show_buttons(filter_=['physics'])
 
         self.__network.write_html(name)
 
