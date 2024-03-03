@@ -36,10 +36,12 @@ class PySTIXView:
         self.__network = Network(height, width, directed=True, notebook=notebook, select_menu=select_menu, filter_menu=filter_menu)
         self.__icons_path = Path(os.path.dirname(__file__)) / 'icons'
 
-        if style in ['square-flat', 'square-dark', 'square-lite', 'noback-dark', 'noback-flat', 'round-flat']:
+        STYLES = ['square-flat', 'square-dark', 'square-lite', 'noback-dark', 'noback-flat', 'round-flat']
+
+        if style in STYLES:
             self.__style = style
         else:
-            raise ValueError(f"Invalid style. Select from the following: {', '.join(style)}")
+            raise ValueError(f"Invalid style. Select from the following: {', '.join(STYLES)}")
 
         self.__network.barnes_hut(gravity=-5000, central_gravity=0, spring_length=50, damping=0.9, overlap=0)
         self.__custom_types = {}
@@ -150,7 +152,7 @@ class PySTIXView:
         """
 
         if isinstance(sdo, dict) or isinstance(sdo, str):
-            sdo = parsing.parse(sdo)
+            sdo = parsing.parse(sdo, allow_custom=True)
 
 
         if not self.__is_stix_object(sdo):
@@ -166,7 +168,7 @@ class PySTIXView:
                     else:
                         raise KeyError("No image nor color found the custom type {stix_type}")
                 else:
-                    warnings.warn(f"SDO type {stix_type} is not defined")
+                    raise ValueError(f"SDO type {stix_type} is not defined")
             else:
                 raise TypeError("Invalid data provided")
         else:
