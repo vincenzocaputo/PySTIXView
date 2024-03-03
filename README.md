@@ -12,7 +12,7 @@ PySTIXView is based on [pyvis](https://github.com/WestHealth/pyvis/) that allows
 
 ### Install from pip
 ```
-pip install pystixview
+pip install PySTIXview
 ```
 
 ### Install from source code
