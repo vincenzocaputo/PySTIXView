@@ -11,8 +11,17 @@ PySTIXView is based on [pyvis](https://github.com/WestHealth/pyvis/) that allows
 - [stix2](https://github.com/oasis-open/cti-python-stix2)
 
 ### Install from pip
+```
+pip install pystixview
+```
 
 ### Install from source code
+
+```
+git clone https://github.com/vincenzocaputo/PySTIXView
+cd PySTIXView
+python3 setup.py install
+```
 
 ## Usage
 
