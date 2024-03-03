@@ -1,7 +1,5 @@
 # PySTIXView
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-
-[![PyPI version](https://badge.fury.io/py/PySTIXview.svg)](https://badge.fury.io/py/PySTIXview)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) [![PyPI version](https://badge.fury.io/py/PySTIXview.svg)](https://badge.fury.io/py/PySTIXview) [![codecov](https://codecov.io/gh/vincenzocaputo/PySTIXView/graph/badge.svg?token=812G6NT5JP)](https://codecov.io/gh/vincenzocaputo/PySTIXView)
 
 PySTXIView is a Python library to create and display STIX2 graphs.
 
