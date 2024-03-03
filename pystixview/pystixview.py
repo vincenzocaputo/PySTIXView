@@ -308,3 +308,11 @@ class PySTIXView:
 
         self.__network.write_html(name)
 
+    def to_json(self) -> str:
+        """Get graph data in JSON format
+
+        :return: JSON representation of the graph
+        """
+
+        return json.dumps(self.__network.get_network_data())
+
