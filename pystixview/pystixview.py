@@ -155,7 +155,7 @@ class PySTIXView:
                              node_color: str = None):
         """Define a custom STIX object type by assigning an icon
          or a color to the node.
-        One of icon or a color must be provided.
+         One of icon or a color must be provided.
 
         :param custom_type: Name of the custom type to define
         :param node_icon: URL or local path to the image to use as node icon
@@ -199,7 +199,7 @@ class PySTIXView:
              (one of node_icon or color must be provided)
         :param node_icon: URLs or local path to the image to use as node icon
         :param color: Color to be assigned to the node in place of the image.
-        Hex RGB format is accepted
+             Hex RGB format is accepted
         :return: True if the node was added correctly
         :raises KeyError: If a custom type does not have any
              image or color for the node
