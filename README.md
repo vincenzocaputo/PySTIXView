@@ -5,6 +5,8 @@ PySTXIView is a Python library to create and display STIX2 graphs.
 
 PySTIXView is based on [pyvis](https://github.com/WestHealth/pyvis/) that allows you to create graph and visualize them in your browser or in Jupyter Notebook.
 
+![](https://raw.githubusercontent.com/vincenzocaputo/PySTIXView/main/_media/graph_example.png)
+
 ## Installation
 
 ### Requirements
