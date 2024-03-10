@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.0.3] - 2024-03-03
+
+### Changed
+
+- Code refactoring for PEP8 compliance
+- Renamed module for PEP8 compliance
+
 ## [0.0.2] - 2024-03-03
 
 ### Changed
