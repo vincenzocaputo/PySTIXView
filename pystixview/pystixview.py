@@ -146,8 +146,8 @@ class PySTIXView:
 
         with open(image_path, "rb") as img_file:
             img = img_file.read()
-            base64_encoded = f"data:image/png;base64,\
-                    {base64.b64encode(img).decode('utf-8')}"
+            img_b64 = base64.b64encode(img).decode('utf-8')
+            base64_encoded = f"data:image/png;base64,{img_b64}"
             return base64_encoded
 
     def add_custom_stix_type(self, custom_type: str,
