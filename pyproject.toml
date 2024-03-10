@@ -1,6 +1,6 @@
 [project]
-name = "PySTIXView"
-version = "0.0.2"
+name = "pystixview"
+version = "0.0.3"
 authors = [
   { name="Vincenzo Caputo", email="caputo.vincenzo@protonmail.com" },
 ]
