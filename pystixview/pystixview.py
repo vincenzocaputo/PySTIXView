@@ -217,7 +217,6 @@ class PySTIXView:
 
         :param bundle: Bundle object to add to the graph.
         :return: True if the object was added successfully
-        :rtype: bool
         :raises TypeError: If an invalid Bundle object is provided
         """
 
@@ -240,7 +239,6 @@ class PySTIXView:
 
         :param relationship: STIX Relationship Object to add
         :return: True if the relationship is added successfully
-        :rtype: bool
         :raises TypeError: If an invalid Relationship object is provided
         """
 
