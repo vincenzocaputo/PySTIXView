@@ -4,7 +4,7 @@ from IPython.display import HTML
 
 from stix2 import parsing
 from pathlib import Path
-from stix2 import (
+from stix2.v21 import (
                     Bundle,
                     Relationship,
                     AttackPattern,
