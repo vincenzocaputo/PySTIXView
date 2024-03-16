@@ -272,9 +272,9 @@ class PySTIXView:
         """
 
         if isinstance(bundle, dict):
-            bundle = parsing.dict_to_stix2(bundle)
+            bundle = parsing.dict_to_stix2(bundle, allow_custom=True)
         elif isinstance(bundle, str):
-            bundle = parsing.parse(bundle)
+            bundle = parsing.parse(bundle, allow_custom=True)
         elif not isinstance(bundle, Bundle):
             raise TypeError("Invalid data provided")
 
@@ -294,9 +294,9 @@ class PySTIXView:
         """
 
         if isinstance(relationship, dict):
-            relationship = parsing.dict_to_stix2(relationship)
+            relationship = parsing.dict_to_stix2(relationship, allow_custom=True)
         elif isinstance(relationship, str):
-            relationship = parsing.parse(relationship)
+            relationship = parsing.parse(relationship, allow_custom=True)
         elif not isinstance(relationship, Relationship):
             raise TypeError("Invalid data provided")
         self._add_edge(relationship.source_ref,
