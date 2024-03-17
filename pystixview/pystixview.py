@@ -98,7 +98,7 @@ class PySTIXView:
                                   overlap=0)
         self.__custom_types = {}
 
-    def __get_stix_object_type(self, object) -> str:
+    def __get_stix_object_type(self, object_to_test) -> str:
         """Check if an object is a valid and supported STIX2 object
 
         :param object_to_test: STIX Object to test 
