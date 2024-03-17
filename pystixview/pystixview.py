@@ -4,26 +4,38 @@ from IPython.display import HTML
 
 from stix2 import parsing
 from pathlib import Path
-from stix2.v21 import (
-                    Bundle,
-                    Relationship,
-                    AttackPattern,
-                    Campaign,
-                    CourseOfAction,
-                    Identity,
-                    Indicator,
-                    Infrastructure,
-                    IntrusionSet,
-                    Location,
-                    Malware,
-                    MalwareAnalysis,
-                    Note,
-                    ObservedData,
-                    Opinion,
-                    Report,
-                    ThreatActor,
-                    Tool,
-                    Vulnerability)
+from stix2.v21 import Bundle
+from stix2.v21.observables import (
+                            AutonomousSystem,
+                            DomainName,
+                            EmailAddress,
+                            EmailMessage,
+                            File,
+                            IPv4address,
+                            IPv6address,
+                            MACAddress,
+                            NetworkTraffic,
+                            URL,
+                            UserAccount)
+from stix2.v21.sro import Relationship
+from stix2.v21.sdo import (
+                        AttackPattern,
+                        Campaign,
+                        CourseOfAction,
+                        Identity,
+                        Indicator,
+                        Infrastructure,
+                        IntrusionSet,
+                        Location,
+                        Malware,
+                        MalwareAnalysis,
+                        Note,
+                        ObservedData,
+                        Opinion,
+                        Report,
+                        ThreatActor,
+                        Tool,
+                        Vulnerability)
 import os
 import json
 import base64
@@ -86,15 +98,16 @@ class PySTIXView:
                                   overlap=0)
         self.__custom_types = {}
 
-    def __is_stix_object(self, sdo) -> bool:
-        """Check if a STIX Domain Object is a valid STIX2 object
+    def __get_stix_object_type(self, object) -> str:
+        """Check if an object is a valid and supported STIX2 object
 
-        :param sdo: STIX Domain Object to test
-        :return: True if the object provided is a valid SDO.
-            False otherwise
+        :param object_to_test: STIX Object to test 
+        :return: 'sdo' if the object provided is a valid STIX Domai Object.
+            'observable' if the object provided is a valid STIX Cyber-Observable Object.
+            None if the object provided is not a valid or supported STIX object.
         """
 
-        stix_object_types = [
+        stix_sdo_types = [
             AttackPattern,
             Campaign,
             CourseOfAction,
@@ -114,10 +127,30 @@ class PySTIXView:
             Vulnerability
         ]
 
-        for type_ in stix_object_types:
-            if isinstance(sdo, type_):
-                return True
-        return False
+        stix_observable_types = [
+            AutonomousSystem,
+            DomainName,
+            EmailAddress,
+            EmailMessage,
+            File,
+            IPv4address,
+            IPv6address,
+            MACAddress,
+            NetworkTraffic,
+            URL,
+            UserAccount
+        ]
+
+        for type_ in stix_sdo_types:
+            if isinstance(object_to_test, type_):
+                # STIX Domain Object detected
+                return "sdo"
+
+        for type_ in stix_observable_types:
+            if isinstance(object_to_test, type_):
+                return "observable"
+
+        return None
 
     def _add_edge(self, source_node: str,
                   target_node: str,
@@ -210,7 +243,8 @@ class PySTIXView:
         if isinstance(sdo, dict) or isinstance(sdo, str):
             sdo = parsing.parse(sdo, allow_custom=True)
 
-        if not self.__is_stix_object(sdo):
+        stix_object_type = self.__get_stix_object_type(sdo)
+        if not stix_object_type:
             if isinstance(sdo, dict):
                 stix_type = sdo['type']
                 if stix_type in self.__custom_types.keys():
@@ -229,8 +263,8 @@ class PySTIXView:
                 raise TypeError("Invalid data provided")
         else:
             stix_type = sdo['type']
-            icon_folder = f"{stix_type}-icons"
-            icon_filename = f"{stix_type}-{self.__style}.png"
+            icon_folder = f"{stix_object_type}/{stix_type}"
+            icon_filename = f"{self.__style}.png"
             icon_path = self.__icons_path / icon_folder / icon_filename
             if icon_path.exists():
                 node_shape = "image"
