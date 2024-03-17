@@ -5,6 +5,12 @@ from IPython.display import HTML
 from stix2 import parsing
 from pathlib import Path
 from stix2.v21 import Bundle
+from stix2.v21 import (
+                    TLP_AMBER,
+                    TLP_GREEN,
+                    TLP_RED,
+                    TLP_WHITE)
+from stix2.v21.common import MarkingDefinition
 from stix2.v21.observables import (
                             AutonomousSystem,
                             DomainName,
@@ -150,6 +156,18 @@ class PySTIXView:
             if isinstance(object_to_test, type_):
                 return "observable"
 
+        if isinstance(object_to_test, MarkingDefinition):
+            if object_to_test['definition'] == TLP_AMBER['definition']:
+                return 'tlp-amber'
+            if object_to_test['definition'] == TLP_GREEN['definition']:
+                return 'tlp-green'
+            if object_to_test['definition'] == TLP_RED['definition']:
+                return 'tlp-red'
+            if object_to_test['definition'] == TLP_WHITE['definition']:
+                return 'tlp-white'
+            
+            return "marking-definition"
+
         return None
 
     def _add_edge(self, source_node: str,
@@ -217,17 +235,21 @@ class PySTIXView:
                      is already defined")
 
     def add_node(self,
-                 sdo: AttackPattern | Campaign | CourseOfAction | Identity |
+                 stix_obj: AttackPattern | Campaign | CourseOfAction | Identity |
                  Indicator | Infrastructure | IntrusionSet | Location |
                  Malware | MalwareAnalysis | Note | ObservedData |
                  Opinion | Report | ThreatActor | Tool | Vulnerability |
-                 str | dict,
+                 MarkingDefinition | AutonomousSystem | DomainName | 
+                 EmailAddress | EmailMessage | File | IPv4Address | 
+                 IPv6Address | MACAddress | NetworkTraffic | URL | 
+                 UserAccount | str | dict,
                  is_custom: bool = True,
                  node_icon: str = None,
                  color: str = None) -> bool:
         """Add a node to the graph
 
-        :param sdo: STIX Domain Object to add to the graph
+        :param stix_obj: STIX Object (SDO, Observable or MarkingDefinition
+             to add to the graph
         :param is_custom: Set to True to add a custom STIX Object
              (one of node_icon or color must be provided)
         :param node_icon: URLs or local path to the image to use as node icon
@@ -240,13 +262,13 @@ class PySTIXView:
         """
 
         node_img = None
-        if isinstance(sdo, dict) or isinstance(sdo, str):
-            sdo = parsing.parse(sdo, allow_custom=True)
+        if isinstance(stix_obj, dict) or isinstance(stix_obj, str):
+            stix_obj = parsing.parse(stix_obj, allow_custom=True)
 
-        stix_object_type = self.__get_stix_object_type(sdo)
+        stix_object_type = self.__get_stix_object_type(stix_obj)
         if not stix_object_type:
-            if isinstance(sdo, dict):
-                stix_type = sdo['type']
+            if isinstance(stix_obj, dict):
+                stix_type = stix_obj['type']
                 if stix_type in self.__custom_types.keys():
                     if 'image' in self.__custom_types[stix_type].keys():
                         node_shape = "image"
@@ -258,11 +280,11 @@ class PySTIXView:
                         raise KeyError("No image nor color found the \
                                 custom type {stix_type}")
                 else:
-                    raise ValueError(f"SDO type {stix_type} is not defined")
+                    raise ValueError(f"STIX Object type {stix_type} is not defined")
             else:
                 raise TypeError("Invalid data provided")
         else:
-            stix_type = sdo['type']
+            stix_type = stix_obj['type']
             icon_folder = f"{stix_object_type}/{stix_type}"
             icon_filename = f"{self.__style}.png"
             icon_path = self.__icons_path / icon_folder / icon_filename
@@ -274,13 +296,13 @@ class PySTIXView:
                 node_shape = "dot"
                 node_color = "#FF0000"
 
-        node_id = sdo['id']
-        node_label = sdo['name']
+        node_id = stix_obj['id']
+        node_label = stix_obj['name']
 
-        if isinstance(sdo, dict):
-            node_title = json.dumps(sdo)
+        if isinstance(stix_obj, dict):
+            node_title = json.dumps(stix_obj)
         else:
-            node_title = sdo.serialize(pretty=True)
+            node_title = stix_obj.serialize(pretty=True)
 
         if node_img:
             self.__network.add_node(node_id,
