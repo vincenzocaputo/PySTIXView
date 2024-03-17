@@ -267,7 +267,7 @@ class PySTIXView:
 
         stix_object_type = self.__get_stix_object_type(stix_obj)
         if not stix_object_type:
-            if isinstance(stix_obj, dict):
+            if isinstance(stix_obj, dict) and 'type' in stix_obj.keys():
                 stix_type = stix_obj['type']
                 if stix_type in self.__custom_types.keys():
                     if 'image' in self.__custom_types[stix_type].keys():
@@ -280,7 +280,10 @@ class PySTIXView:
                         raise KeyError("No image nor color found the \
                                 custom type {stix_type}")
                 else:
-                    raise ValueError(f"STIX Object type {stix_type} is not defined")
+                    warnings.warn(f"STIX Object {stix_type} is not defined")
+                    icon_path = self.__icons_path / "custom" / f"{self.__style}.png"
+                    node_shape = "image"
+                    node_img = self.__image_to_base64(icon_path)
             else:
                 raise TypeError("Invalid data provided")
         else:
