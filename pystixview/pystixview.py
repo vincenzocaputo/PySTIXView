@@ -4,26 +4,45 @@ from IPython.display import HTML
 
 from stix2 import parsing
 from pathlib import Path
-from stix2 import (
-                    Bundle,
-                    Relationship,
-                    AttackPattern,
-                    Campaign,
-                    CourseOfAction,
-                    Identity,
-                    Indicator,
-                    Infrastructure,
-                    IntrusionSet,
-                    Location,
-                    Malware,
-                    MalwareAnalysis,
-                    Note,
-                    ObservedData,
-                    Opinion,
-                    Report,
-                    ThreatActor,
-                    Tool,
-                    Vulnerability)
+from stix2.v21 import Bundle
+from stix2.v21 import (
+                    TLP_AMBER,
+                    TLP_GREEN,
+                    TLP_RED,
+                    TLP_WHITE)
+from stix2.v21.common import MarkingDefinition
+from stix2.v21.observables import (
+                            AutonomousSystem,
+                            DomainName,
+                            EmailAddress,
+                            EmailMessage,
+                            File,
+                            IPv4Address,
+                            IPv6Address,
+                            MACAddress,
+                            NetworkTraffic,
+                            URL,
+                            UserAccount)
+from stix2.v21.sro import Relationship
+from stix2.v21.sdo import (
+                        AttackPattern,
+                        Campaign,
+                        CourseOfAction,
+                        Grouping,
+                        Identity,
+                        Indicator,
+                        Infrastructure,
+                        IntrusionSet,
+                        Location,
+                        Malware,
+                        MalwareAnalysis,
+                        Note,
+                        ObservedData,
+                        Opinion,
+                        Report,
+                        ThreatActor,
+                        Tool,
+                        Vulnerability)
 import os
 import json
 import base64
@@ -86,18 +105,20 @@ class PySTIXView:
                                   overlap=0)
         self.__custom_types = {}
 
-    def __is_stix_object(self, sdo) -> bool:
-        """Check if a STIX Domain Object is a valid STIX2 object
+    def __get_stix_object_type(self, object_to_test) -> str:
+        """Check if an object is a valid and supported STIX2 object
 
-        :param sdo: STIX Domain Object to test
-        :return: True if the object provided is a valid SDO.
-            False otherwise
+        :param object_to_test: STIX Object to test 
+        :return: 'sdo' if the object provided is a valid STIX Domai Object.
+            'observable' if the object provided is a valid STIX Cyber-Observable Object.
+            None if the object provided is not a valid or supported STIX object.
         """
 
-        stix_object_types = [
+        stix_sdo_types = [
             AttackPattern,
             Campaign,
             CourseOfAction,
+            Grouping,
             Identity,
             Indicator,
             Infrastructure,
@@ -114,10 +135,42 @@ class PySTIXView:
             Vulnerability
         ]
 
-        for type_ in stix_object_types:
-            if isinstance(sdo, type_):
-                return True
-        return False
+        stix_observable_types = [
+            AutonomousSystem,
+            DomainName,
+            EmailAddress,
+            EmailMessage,
+            File,
+            IPv4Address,
+            IPv6Address,
+            MACAddress,
+            NetworkTraffic,
+            URL,
+            UserAccount
+        ]
+
+        for type_ in stix_sdo_types:
+            if isinstance(object_to_test, type_):
+                # STIX Domain Object detected
+                return "sdo"
+
+        for type_ in stix_observable_types:
+            if isinstance(object_to_test, type_):
+                return "observable"
+
+        if isinstance(object_to_test, MarkingDefinition):
+            if object_to_test['definition'] == TLP_AMBER['definition']:
+                return 'tlp-amber'
+            if object_to_test['definition'] == TLP_GREEN['definition']:
+                return 'tlp-green'
+            if object_to_test['definition'] == TLP_RED['definition']:
+                return 'tlp-red'
+            if object_to_test['definition'] == TLP_WHITE['definition']:
+                return 'tlp-white'
+            
+            return "marking-definition"
+
+        return None
 
     def _add_edge(self, source_node: str,
                   target_node: str,
@@ -152,6 +205,7 @@ class PySTIXView:
 
     def add_custom_stix_type(self, custom_type: str,
                              node_icon: str = None,
+                             label_name: str = 'name',
                              node_color: str = None):
         """Define a custom STIX object type by assigning an icon
          or a color to the node.
@@ -159,6 +213,7 @@ class PySTIXView:
 
         :param custom_type: Name of the custom type to define
         :param node_icon: URL or local path to the image to use as node icon
+        :param label_name: name of the field to use as node label
         :param color: Color to assign to the node in hex rgb format
         :raises ValueError: If an attempt is made to add a custom type that
              is already defined.
@@ -179,22 +234,27 @@ class PySTIXView:
                     self.__custom_types[custom_type] = {'color': node_color}
                 else:
                     raise TypeError("Provide a valid color in hex rgb format")
+            self.__custom_types[custom_type]['label_name'] = label_name
         else:
             raise Exception(f"The custom type {custom_type}\
                      is already defined")
 
     def add_node(self,
-                 sdo: AttackPattern | Campaign | CourseOfAction | Identity |
-                 Indicator | Infrastructure | IntrusionSet | Location |
-                 Malware | MalwareAnalysis | Note | ObservedData |
-                 Opinion | Report | ThreatActor | Tool | Vulnerability |
-                 str | dict,
+                 stix_obj: AttackPattern | Campaign | CourseOfAction | 
+                 Grouping | Identity | Indicator | Infrastructure | 
+                 IntrusionSet | Location | Malware | MalwareAnalysis | 
+                 Note | ObservedData | Opinion | Report | ThreatActor | 
+                 Tool | Vulnerability | MarkingDefinition | AutonomousSystem |
+                 DomainName | EmailAddress | EmailMessage | File | 
+                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic | 
+                 URL | UserAccount | str | dict,
                  is_custom: bool = True,
                  node_icon: str = None,
                  color: str = None) -> bool:
         """Add a node to the graph
 
-        :param sdo: STIX Domain Object to add to the graph
+        :param stix_obj: STIX Object (SDO, Observable or MarkingDefinition
+             to add to the graph
         :param is_custom: Set to True to add a custom STIX Object
              (one of node_icon or color must be provided)
         :param node_icon: URLs or local path to the image to use as node icon
@@ -207,30 +267,36 @@ class PySTIXView:
         """
 
         node_img = None
-        if isinstance(sdo, dict) or isinstance(sdo, str):
-            sdo = parsing.parse(sdo, allow_custom=True)
-
-        if not self.__is_stix_object(sdo):
-            if isinstance(sdo, dict):
-                stix_type = sdo['type']
-                if stix_type in self.__custom_types.keys():
-                    if 'image' in self.__custom_types[stix_type].keys():
-                        node_shape = "image"
-                        node_img = self.__custom_types[stix_type]['image']
-                    elif 'color' in self.__custom_types[stix_type].keys():
-                        node_shape = "dot"
-                        node_color = self.__custom_types[stix_type]['color']
-                    else:
-                        raise KeyError("No image nor color found the \
-                                custom type {stix_type}")
-                else:
-                    raise ValueError(f"SDO type {stix_type} is not defined")
-            else:
-                raise TypeError("Invalid data provided")
+        if isinstance(stix_obj, dict) or isinstance(stix_obj, str):
+            stix_obj = parsing.parse(stix_obj, allow_custom=True)
         else:
-            stix_type = sdo['type']
-            icon_folder = f"{stix_type}-icons"
-            icon_filename = f"{stix_type}-{self.__style}.png"
+            if not hasattr(stix_obj, 'type'):
+                raise TypeError("Invalid data provided")
+
+        stix_object_type = self.__get_stix_object_type(stix_obj)
+        label_name = 'name'
+        if not stix_object_type:
+            stix_type = stix_obj['type']
+            if stix_type in self.__custom_types.keys():
+                if 'image' in self.__custom_types[stix_type].keys():
+                    node_shape = "image"
+                    node_img = self.__custom_types[stix_type]['image']
+                elif 'color' in self.__custom_types[stix_type].keys():
+                    node_shape = "dot"
+                    node_color = self.__custom_types[stix_type]['color']
+                else:
+                    raise KeyError("No image nor color found the \
+                            custom type {stix_type}")
+                label_name = self.__custom_types[stix_type]['label_name']
+            else:
+                warnings.warn(f"STIX Object {stix_type} is not defined")
+                icon_path = self.__icons_path / "custom" / f"{self.__style}.png"
+                node_shape = "image"
+                node_img = self.__image_to_base64(icon_path)
+        else:
+            stix_type = stix_obj['type']
+            icon_folder = f"{stix_object_type}/{stix_type}"
+            icon_filename = f"{self.__style}.png"
             icon_path = self.__icons_path / icon_folder / icon_filename
             if icon_path.exists():
                 node_shape = "image"
@@ -240,13 +306,18 @@ class PySTIXView:
                 node_shape = "dot"
                 node_color = "#FF0000"
 
-        node_id = sdo['id']
-        node_label = sdo['name']
-
-        if isinstance(sdo, dict):
-            node_title = json.dumps(sdo)
+        node_id = stix_obj['id']
+        
+        if hasattr(stix_obj, label_name) or label_name in stix_obj.keys():
+            node_label = stix_obj[label_name]
         else:
-            node_title = sdo.serialize(pretty=True)
+            warnings.warn(f"STIX Object does not contain the field {label_name}")
+            node_label = stix_obj['type']
+
+        if isinstance(stix_obj, dict):
+            node_title = json.dumps(stix_obj)
+        else:
+            node_title = stix_obj.serialize(pretty=True)
 
         if node_img:
             self.__network.add_node(node_id,
@@ -272,9 +343,9 @@ class PySTIXView:
         """
 
         if isinstance(bundle, dict):
-            bundle = parsing.dict_to_stix2(bundle)
+            bundle = parsing.dict_to_stix2(bundle, allow_custom=True)
         elif isinstance(bundle, str):
-            bundle = parsing.parse(bundle)
+            bundle = parsing.parse(bundle, allow_custom=True)
         elif not isinstance(bundle, Bundle):
             raise TypeError("Invalid data provided")
 
@@ -283,6 +354,14 @@ class PySTIXView:
                 self.add_relationship(obj)
             else:
                 self.add_node(obj)
+
+        # Parse object_refs
+        for obj in bundle.objects:
+            if hasattr(obj, 'object_refs'):
+                for ref in obj['object_refs']:
+                    self._add_edge(obj['id'],
+                                   ref,
+                                   'refers-to')
 
     def add_relationship(self, relationship: Relationship |
                          str | dict) -> bool:
@@ -294,9 +373,9 @@ class PySTIXView:
         """
 
         if isinstance(relationship, dict):
-            relationship = parsing.dict_to_stix2(relationship)
+            relationship = parsing.dict_to_stix2(relationship, allow_custom=True)
         elif isinstance(relationship, str):
-            relationship = parsing.parse(relationship)
+            relationship = parsing.parse(relationship, allow_custom=True)
         elif not isinstance(relationship, Relationship):
             raise TypeError("Invalid data provided")
         self._add_edge(relationship.source_ref,

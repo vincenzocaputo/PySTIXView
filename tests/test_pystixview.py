@@ -6,6 +6,7 @@ from stix2.parsing import parse
 
 from IPython.display import HTML
 
+import warnings
 import base64
 import json
 import os
@@ -183,7 +184,7 @@ class TestPySTIXView(unittest.TestCase):
     def test_node_type(self):
         self.graph = PySTIXView("100%", "100%", notebook=False)
 
-        with self.assertRaises(ValueError):
+        with self.assertWarns(Warning):
             self.graph.add_node("""
             {
                 "type": "x-test",
