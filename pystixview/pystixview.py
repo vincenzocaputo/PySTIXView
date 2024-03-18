@@ -355,6 +355,14 @@ class PySTIXView:
             else:
                 self.add_node(obj)
 
+        # Parse object_refs
+        for obj in bundle.objects:
+            if hasattr(obj, 'object_refs'):
+                for ref in obj['object_refs']:
+                    self._add_edge(obj['id'],
+                                   ref,
+                                   'refers-to')
+
     def add_relationship(self, relationship: Relationship |
                          str | dict) -> bool:
         """Add a Relationship object to the graph
