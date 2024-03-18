@@ -205,6 +205,7 @@ class PySTIXView:
 
     def add_custom_stix_type(self, custom_type: str,
                              node_icon: str = None,
+                             label_name: str = 'name',
                              node_color: str = None):
         """Define a custom STIX object type by assigning an icon
          or a color to the node.
@@ -212,6 +213,7 @@ class PySTIXView:
 
         :param custom_type: Name of the custom type to define
         :param node_icon: URL or local path to the image to use as node icon
+        :param label_name: name of the field to use as node label
         :param color: Color to assign to the node in hex rgb format
         :raises ValueError: If an attempt is made to add a custom type that
              is already defined.
@@ -232,6 +234,7 @@ class PySTIXView:
                     self.__custom_types[custom_type] = {'color': node_color}
                 else:
                     raise TypeError("Provide a valid color in hex rgb format")
+            self.__custom_types[custom_type]['label_name'] = label_name
         else:
             raise Exception(f"The custom type {custom_type}\
                      is already defined")
@@ -266,28 +269,30 @@ class PySTIXView:
         node_img = None
         if isinstance(stix_obj, dict) or isinstance(stix_obj, str):
             stix_obj = parsing.parse(stix_obj, allow_custom=True)
+        else:
+            if not hasattr(stix_obj, 'type'):
+                raise TypeError("Invalid data provided")
 
         stix_object_type = self.__get_stix_object_type(stix_obj)
+        label_name = 'name'
         if not stix_object_type:
-            if hasattr(stix_obj, 'type'):
-                stix_type = stix_obj['type']
-                if stix_type in self.__custom_types.keys():
-                    if 'image' in self.__custom_types[stix_type].keys():
-                        node_shape = "image"
-                        node_img = self.__custom_types[stix_type]['image']
-                    elif 'color' in self.__custom_types[stix_type].keys():
-                        node_shape = "dot"
-                        node_color = self.__custom_types[stix_type]['color']
-                    else:
-                        raise KeyError("No image nor color found the \
-                                custom type {stix_type}")
-                else:
-                    warnings.warn(f"STIX Object {stix_type} is not defined")
-                    icon_path = self.__icons_path / "custom" / f"{self.__style}.png"
+            stix_type = stix_obj['type']
+            if stix_type in self.__custom_types.keys():
+                if 'image' in self.__custom_types[stix_type].keys():
                     node_shape = "image"
-                    node_img = self.__image_to_base64(icon_path)
+                    node_img = self.__custom_types[stix_type]['image']
+                elif 'color' in self.__custom_types[stix_type].keys():
+                    node_shape = "dot"
+                    node_color = self.__custom_types[stix_type]['color']
+                else:
+                    raise KeyError("No image nor color found the \
+                            custom type {stix_type}")
+                label_name = self.__custom_types[stix_type]['label_name']
             else:
-                raise TypeError("Invalid data provided")
+                warnings.warn(f"STIX Object {stix_type} is not defined")
+                icon_path = self.__icons_path / "custom" / f"{self.__style}.png"
+                node_shape = "image"
+                node_img = self.__image_to_base64(icon_path)
         else:
             stix_type = stix_obj['type']
             icon_folder = f"{stix_object_type}/{stix_type}"
@@ -302,7 +307,12 @@ class PySTIXView:
                 node_color = "#FF0000"
 
         node_id = stix_obj['id']
-        node_label = stix_obj['name']
+        
+        if hasattr(stix_obj, label_name) or label_name in stix_obj.keys():
+            node_label = stix_obj[label_name]
+        else:
+            warnings.warn(f"STIX Object does not contain the field {label_name}")
+            node_label = stix_obj['type']
 
         if isinstance(stix_obj, dict):
             node_title = json.dumps(stix_obj)
