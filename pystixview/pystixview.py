@@ -237,14 +237,14 @@ class PySTIXView:
                      is already defined")
 
     def add_node(self,
-                 stix_obj: AttackPattern | Campaign | CourseOfAction | Identity |
-                 Indicator | Infrastructure | IntrusionSet | Location |
-                 Malware | MalwareAnalysis | Note | ObservedData |
-                 Opinion | Report | ThreatActor | Tool | Vulnerability |
-                 MarkingDefinition | AutonomousSystem | DomainName | 
-                 EmailAddress | EmailMessage | File | IPv4Address | 
-                 IPv6Address | MACAddress | NetworkTraffic | URL | 
-                 UserAccount | str | dict,
+                 stix_obj: AttackPattern | Campaign | CourseOfAction | 
+                 Grouping | Identity | Indicator | Infrastructure | 
+                 IntrusionSet | Location | Malware | MalwareAnalysis | 
+                 Note | ObservedData | Opinion | Report | ThreatActor | 
+                 Tool | Vulnerability | MarkingDefinition | AutonomousSystem |
+                 DomainName | EmailAddress | EmailMessage | File | 
+                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic | 
+                 URL | UserAccount | str | dict,
                  is_custom: bool = True,
                  node_icon: str = None,
                  color: str = None) -> bool:
@@ -269,7 +269,7 @@ class PySTIXView:
 
         stix_object_type = self.__get_stix_object_type(stix_obj)
         if not stix_object_type:
-            if isinstance(stix_obj, dict) and 'type' in stix_obj.keys():
+            if hasattr(stix_obj, 'type'):
                 stix_type = stix_obj['type']
                 if stix_type in self.__custom_types.keys():
                     if 'image' in self.__custom_types[stix_type].keys():
