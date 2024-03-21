@@ -26,6 +26,7 @@ jobs:
           # To report GitHub Actions status checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FILTER_REGEX_INCLUDE: .*pystixview/.*
+          FILTER_REGEX_EXCLUDE: .*__.py*
           VALIDATE_CHECKOV: "false"
           VALIDATE_PYTHON_BLACK: "false"
           VALIDATE_PYTHON_ISORT: "false"
