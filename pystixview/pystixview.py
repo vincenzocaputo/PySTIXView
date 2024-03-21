@@ -379,11 +379,12 @@ class PySTIXView:
                 self.add_node(obj)
                 if hasattr(obj, 'granular_markings'):
                     for marking in obj['granular_markings']:
-                        self.add_node(self.__TLP_MARKINGS[marking['marking_ref']]['object'])
+                        self.add_node(
+                                self.__TLP_MARKINGS[marking['marking_ref']]
+                                ['object'])
                         self._add_edge(marking['marking_ref'],
                                        obj['id'],
-                                      'applied-to')
-
+                                       'applied-to')
         # Parse object_refs
         for obj in bundle.objects:
             if hasattr(obj, 'object_refs'):
