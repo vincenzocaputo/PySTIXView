@@ -108,10 +108,12 @@ class PySTIXView:
     def __get_stix_object_type(self, object_to_test) -> str:
         """Check if an object is a valid and supported STIX2 object
 
-        :param object_to_test: STIX Object to test 
+        :param object_to_test: STIX Object to test
         :return: 'sdo' if the object provided is a valid STIX Domai Object.
-            'observable' if the object provided is a valid STIX Cyber-Observable Object.
-            None if the object provided is not a valid or supported STIX object.
+            'observable' if the object provided is a valid STIX
+            Cyber-Observable Object.
+            None if the object provided is not a valid or supported
+            STIX object.
         """
 
         stix_sdo_types = [
@@ -167,7 +169,7 @@ class PySTIXView:
                 return 'tlp-red'
             if object_to_test['definition'] == TLP_WHITE['definition']:
                 return 'tlp-white'
-            
+
             return "marking-definition"
 
         return None
@@ -240,13 +242,13 @@ class PySTIXView:
                      is already defined")
 
     def add_node(self,
-                 stix_obj: AttackPattern | Campaign | CourseOfAction | 
-                 Grouping | Identity | Indicator | Infrastructure | 
-                 IntrusionSet | Location | Malware | MalwareAnalysis | 
-                 Note | ObservedData | Opinion | Report | ThreatActor | 
+                 stix_obj: AttackPattern | Campaign | CourseOfAction |
+                 Grouping | Identity | Indicator | Infrastructure |
+                 IntrusionSet | Location | Malware | MalwareAnalysis |
+                 Note | ObservedData | Opinion | Report | ThreatActor |
                  Tool | Vulnerability | MarkingDefinition | AutonomousSystem |
-                 DomainName | EmailAddress | EmailMessage | File | 
-                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic | 
+                 DomainName | EmailAddress | EmailMessage | File |
+                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic |
                  URL | UserAccount | str | dict,
                  is_custom: bool = True,
                  node_icon: str = None,
@@ -290,7 +292,9 @@ class PySTIXView:
                 label_name = self.__custom_types[stix_type]['label_name']
             else:
                 warnings.warn(f"STIX Object {stix_type} is not defined")
-                icon_path = self.__icons_path / "custom" / f"{self.__style}.png"
+                icon_path = (self.__icons_path /
+                             "custom" /
+                             f"{self.__style}.png")
                 node_shape = "image"
                 node_img = self.__image_to_base64(icon_path)
         else:
@@ -307,11 +311,11 @@ class PySTIXView:
                 node_color = "#FF0000"
 
         node_id = stix_obj['id']
-        
         if hasattr(stix_obj, label_name) or label_name in stix_obj.keys():
             node_label = stix_obj[label_name]
         else:
-            warnings.warn(f"STIX Object does not contain the field {label_name}")
+            warnings.warn(f"STIX Object does not \
+                    contain the field {label_name}")
             node_label = stix_obj['type']
 
         if isinstance(stix_obj, dict):
@@ -373,7 +377,8 @@ class PySTIXView:
         """
 
         if isinstance(relationship, dict):
-            relationship = parsing.dict_to_stix2(relationship, allow_custom=True)
+            relationship = parsing.dict_to_stix2(relationship,
+                                                 allow_custom=True)
         elif isinstance(relationship, str):
             relationship = parsing.parse(relationship, allow_custom=True)
         elif not isinstance(relationship, Relationship):
