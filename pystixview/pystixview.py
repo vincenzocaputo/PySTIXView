@@ -65,6 +65,25 @@ class PySTIXView:
             round-flat
     """
 
+    __TLP_MARKINGS = {
+            TLP_RED['id']: {
+                'label': 'tlp-red',
+                'object': TLP_RED
+            },
+            TLP_AMBER['id']: {
+                'label': 'tlp-amber',
+                'object': TLP_AMBER
+            },
+            TLP_GREEN['id']: {
+                'label': 'tlp-green',
+                'object': TLP_GREEN
+            },
+            TLP_WHITE['id']: {
+                'label': 'tlp-white',
+                'object': TLP_WHITE
+            }
+    }
+
     def __init__(self, height: str, width: str, notebook: bool = False,
                  select_menu: bool = False, filter_menu: bool = False,
                  style: str = 'square-flat'):
@@ -161,16 +180,10 @@ class PySTIXView:
                 return "observable"
 
         if isinstance(object_to_test, MarkingDefinition):
-            if object_to_test['definition'] == TLP_AMBER['definition']:
-                return 'tlp-amber'
-            if object_to_test['definition'] == TLP_GREEN['definition']:
-                return 'tlp-green'
-            if object_to_test['definition'] == TLP_RED['definition']:
-                return 'tlp-red'
-            if object_to_test['definition'] == TLP_WHITE['definition']:
-                return 'tlp-white'
-
-            return "marking-definition"
+            if object_to_test['id'] in self.__TLP_MARKINGS.keys():
+                return self.__TLP_MARKINGS[object_to_test['id']]['label']
+            else:
+                return "marking-definition"
 
         return None
 
@@ -299,9 +312,14 @@ class PySTIXView:
                 node_img = self.__image_to_base64(icon_path)
         else:
             stix_type = stix_obj['type']
-            icon_folder = f"{stix_object_type}/{stix_type}"
-            icon_filename = f"{self.__style}.png"
+            if stix_type == "marking-definition":
+                icon_folder = "generic"
+                icon_filename = f"{stix_object_type}-{self.__style}.png"
+            else:
+                icon_folder = f"{stix_object_type}/{stix_type}"
+                icon_filename = f"{self.__style}.png"
             icon_path = self.__icons_path / icon_folder / icon_filename
+            print(icon_path)
             if icon_path.exists():
                 node_shape = "image"
                 node_img = self.__image_to_base64(icon_path)
@@ -360,6 +378,12 @@ class PySTIXView:
                 self.add_relationship(obj)
             else:
                 self.add_node(obj)
+                if hasattr(obj, 'granular_markings'):
+                    for marking in obj['granular_markings']:
+                        self.add_node(self.__TLP_MARKINGS[marking['marking_ref']]['object'])
+                        self._add_edge(marking['marking_ref'],
+                                       obj['id'],
+                                      'applied-to')
 
         # Parse object_refs
         for obj in bundle.objects:
