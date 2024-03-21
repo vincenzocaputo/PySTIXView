@@ -313,6 +313,8 @@ class PySTIXView:
         node_id = stix_obj['id']
         if hasattr(stix_obj, label_name) or label_name in stix_obj.keys():
             node_label = stix_obj[label_name]
+        elif hasattr(stix_obj, 'value') or 'value' in stix_obj.keys():
+            node_label = stix_obj['value']
         else:
             warnings.warn(f"STIX Object does not \
                     contain the field {label_name}")
