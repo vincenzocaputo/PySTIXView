@@ -65,6 +65,25 @@ class PySTIXView:
             round-flat
     """
 
+    __TLP_MARKINGS = {
+            TLP_RED['id']: {
+                'label': 'tlp-red',
+                'object': TLP_RED
+            },
+            TLP_AMBER['id']: {
+                'label': 'tlp-amber',
+                'object': TLP_AMBER
+            },
+            TLP_GREEN['id']: {
+                'label': 'tlp-green',
+                'object': TLP_GREEN
+            },
+            TLP_WHITE['id']: {
+                'label': 'tlp-white',
+                'object': TLP_WHITE
+            }
+    }
+
     def __init__(self, height: str, width: str, notebook: bool = False,
                  select_menu: bool = False, filter_menu: bool = False,
                  style: str = 'square-flat'):
@@ -108,10 +127,12 @@ class PySTIXView:
     def __get_stix_object_type(self, object_to_test) -> str:
         """Check if an object is a valid and supported STIX2 object
 
-        :param object_to_test: STIX Object to test 
+        :param object_to_test: STIX Object to test
         :return: 'sdo' if the object provided is a valid STIX Domai Object.
-            'observable' if the object provided is a valid STIX Cyber-Observable Object.
-            None if the object provided is not a valid or supported STIX object.
+            'observable' if the object provided is a valid STIX
+            Cyber-Observable Object.
+            None if the object provided is not a valid or supported
+            STIX object.
         """
 
         stix_sdo_types = [
@@ -159,16 +180,10 @@ class PySTIXView:
                 return "observable"
 
         if isinstance(object_to_test, MarkingDefinition):
-            if object_to_test['definition'] == TLP_AMBER['definition']:
-                return 'tlp-amber'
-            if object_to_test['definition'] == TLP_GREEN['definition']:
-                return 'tlp-green'
-            if object_to_test['definition'] == TLP_RED['definition']:
-                return 'tlp-red'
-            if object_to_test['definition'] == TLP_WHITE['definition']:
-                return 'tlp-white'
-            
-            return "marking-definition"
+            if object_to_test['id'] in self.__TLP_MARKINGS.keys():
+                return self.__TLP_MARKINGS[object_to_test['id']]['label']
+            else:
+                return "marking-definition"
 
         return None
 
@@ -240,13 +255,13 @@ class PySTIXView:
                      is already defined")
 
     def add_node(self,
-                 stix_obj: AttackPattern | Campaign | CourseOfAction | 
-                 Grouping | Identity | Indicator | Infrastructure | 
-                 IntrusionSet | Location | Malware | MalwareAnalysis | 
-                 Note | ObservedData | Opinion | Report | ThreatActor | 
+                 stix_obj: AttackPattern | Campaign | CourseOfAction |
+                 Grouping | Identity | Indicator | Infrastructure |
+                 IntrusionSet | Location | Malware | MalwareAnalysis |
+                 Note | ObservedData | Opinion | Report | ThreatActor |
                  Tool | Vulnerability | MarkingDefinition | AutonomousSystem |
-                 DomainName | EmailAddress | EmailMessage | File | 
-                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic | 
+                 DomainName | EmailAddress | EmailMessage | File |
+                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic |
                  URL | UserAccount | str | dict,
                  is_custom: bool = True,
                  node_icon: str = None,
@@ -290,13 +305,19 @@ class PySTIXView:
                 label_name = self.__custom_types[stix_type]['label_name']
             else:
                 warnings.warn(f"STIX Object {stix_type} is not defined")
-                icon_path = self.__icons_path / "custom" / f"{self.__style}.png"
+                icon_path = (self.__icons_path /
+                             "custom" /
+                             f"{self.__style}.png")
                 node_shape = "image"
                 node_img = self.__image_to_base64(icon_path)
         else:
             stix_type = stix_obj['type']
-            icon_folder = f"{stix_object_type}/{stix_type}"
-            icon_filename = f"{self.__style}.png"
+            if stix_type == "marking-definition":
+                icon_folder = "generic"
+                icon_filename = f"{stix_object_type}-{self.__style}.png"
+            else:
+                icon_folder = f"{stix_object_type}/{stix_type}"
+                icon_filename = f"{self.__style}.png"
             icon_path = self.__icons_path / icon_folder / icon_filename
             if icon_path.exists():
                 node_shape = "image"
@@ -307,11 +328,13 @@ class PySTIXView:
                 node_color = "#FF0000"
 
         node_id = stix_obj['id']
-        
         if hasattr(stix_obj, label_name) or label_name in stix_obj.keys():
             node_label = stix_obj[label_name]
+        elif hasattr(stix_obj, 'value') or 'value' in stix_obj.keys():
+            node_label = stix_obj['value']
         else:
-            warnings.warn(f"STIX Object does not contain the field {label_name}")
+            warnings.warn(f"STIX Object does not \
+                    contain the field {label_name}")
             node_label = stix_obj['type']
 
         if isinstance(stix_obj, dict):
@@ -354,7 +377,14 @@ class PySTIXView:
                 self.add_relationship(obj)
             else:
                 self.add_node(obj)
-
+                if hasattr(obj, 'granular_markings'):
+                    for marking in obj['granular_markings']:
+                        self.add_node(
+                                self.__TLP_MARKINGS[marking['marking_ref']]
+                                ['object'])
+                        self._add_edge(marking['marking_ref'],
+                                       obj['id'],
+                                       'applied-to')
         # Parse object_refs
         for obj in bundle.objects:
             if hasattr(obj, 'object_refs'):
@@ -373,7 +403,8 @@ class PySTIXView:
         """
 
         if isinstance(relationship, dict):
-            relationship = parsing.dict_to_stix2(relationship, allow_custom=True)
+            relationship = parsing.dict_to_stix2(relationship,
+                                                 allow_custom=True)
         elif isinstance(relationship, str):
             relationship = parsing.parse(relationship, allow_custom=True)
         elif not isinstance(relationship, Relationship):

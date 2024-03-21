@@ -1,0 +1,30 @@
+{
+    "type": "bundle",
+    "id": "bundle--16a7bb02-9c4b-47a2-8145-83c5e1cb7ec3",
+    "objects": [
+        {
+            "type": "malware",
+            "spec_version": "2.1",
+            "id": "malware--02524b02-07a2-4b38-a449-e1be2852ed97",
+            "created": "2024-03-21T00:00:00Z",
+            "modified": "2024-03-21T00:00:00Z",
+            "name": "RansomwareXYZ",
+            "is_family": false,
+            "description": "A ransomware variant used in targeted attacks.",
+            "labels": ["ransomware", "targeted-attacks"]
+        },
+        {
+            "type": "report",
+            "spec_version": "2.1",
+            "id": "report--9a458756-827f-4e0e-9742-253d22570e86",
+            "created": "2024-03-21T00:00:00Z",
+            "modified": "2024-03-21T00:00:00Z",
+            "name": "Malware Report XYZ",
+            "labels": ["report"],
+            "published": "2024-03-21T00:00:00Z",
+            "description": "A simple report",
+            "object_refs": ["malware--02524b02-07a2-4b38-a449-e1be2852ed97"]
+        }
+    ]
+}
+
