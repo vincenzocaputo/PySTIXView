@@ -319,7 +319,6 @@ class PySTIXView:
                 icon_folder = f"{stix_object_type}/{stix_type}"
                 icon_filename = f"{self.__style}.png"
             icon_path = self.__icons_path / icon_folder / icon_filename
-            print(icon_path)
             if icon_path.exists():
                 node_shape = "image"
                 node_img = self.__image_to_base64(icon_path)

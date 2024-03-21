@@ -22,6 +22,20 @@ class TestPySTIXView(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.graph = PySTIXView("100%", "100%", notebook=False, style="test")
 
+    def test_add_node_observabel(self):
+        self.graph = PySTIXView("100%", "100%", notebook=False)
+
+        stix_obs = """{
+            "type": "domain-name",
+            "spec_version": "2.1",
+            "id": "domain-name--a994eb8e-915d-4975-968d-62736961c93b",
+            "value": "test-domain.local"
+        }
+        """
+        self.assertTrue(self.graph.add_node(stix_obs))
+        network = json.loads(self.graph.to_json())
+        self.assertEqual(network[0][0]['label'], "test-domain.local")
+
     def test_bundle_string(self):
         self.graph = PySTIXView("100%", "100%", notebook=False)
         with open('tests/stix_bundle1.json', 'r') as fd:
@@ -51,6 +65,24 @@ class TestPySTIXView(unittest.TestCase):
         self.graph = PySTIXView("100%", "100%", notebook=False)
         with self.assertRaises(TypeError):
             self.graph.add_bundle(123)
+
+    def test_bundle_granular_markings(self):
+        self.graph = PySTIXView("100%", "100%", notebook=False)
+        with open('tests/stix_bundle3.json', 'r') as fd:
+            bundle = parse(fd.read())
+
+        self.graph.add_bundle(bundle)
+        network = json.loads(self.graph.to_json())
+        self.assertTrue('TLP:RED' in [ x['label'] for x in network[0] ])
+
+    def test_bundle_object_refs(self):
+        self.graph = PySTIXView("100%", "100%", notebook=False)
+        with open('tests/stix_bundle4.json', 'r') as fd:
+            bundle = parse(fd.read())
+
+        self.graph.add_bundle(bundle)
+        network = json.loads(self.graph.to_json())
+        self.assertEqual('malware--02524b02-07a2-4b38-a449-e1be2852ed97', network[1][0]['to'])
 
     def test_add_relationship_str(self):
         self.graph = PySTIXView("100%", "100%", notebook=False)
