@@ -341,20 +341,23 @@ class PySTIXView:
             node_title = json.dumps(stix_obj)
         else:
             node_title = stix_obj.serialize(pretty=True)
+            stix_obj = json.loads(node_title)
 
         if node_img:
             self.__network.add_node(node_id,
                                     label=node_label,
                                     shape=node_shape,
                                     image=node_img,
-                                    title=node_title)
+                                    title=node_title,
+                                    **stix_obj)
             return True
         else:
             self.__network.add_node(node_id,
                                     label=node_label,
                                     shape=node_shape,
                                     color=node_color,
-                                    title=node_title)
+                                    title=node_title,
+                                    **stix_obj)
             return True
 
     def add_bundle(self, bundle: Bundle | dict | str) -> bool:
