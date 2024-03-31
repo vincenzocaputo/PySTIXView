@@ -2,6 +2,8 @@ from pyvis.network import Network
 
 from IPython.display import HTML
 
+from bs4 import BeautifulSoup
+
 from stix2 import parsing
 from pathlib import Path
 from stix2.v21 import Bundle
@@ -348,7 +350,7 @@ class PySTIXView:
                                     label=node_label,
                                     shape=node_shape,
                                     image=node_img,
-                                    title=node_title,
+                                    stix=node_title,
                                     **stix_obj)
             return True
         else:
@@ -356,7 +358,7 @@ class PySTIXView:
                                     label=node_label,
                                     shape=node_shape,
                                     color=node_color,
-                                    title=node_title,
+                                    stix=node_title,
                                     **stix_obj)
             return True
 
@@ -416,7 +418,8 @@ class PySTIXView:
                        relationship.target_ref,
                        relationship.relationship_type)
 
-    def show_graph(self, show_physics_buttons: bool = False,
+
+    def _generate_graph(self, show_physics_buttons: bool = False,
                    show_node_buttons: bool = False,
                    show_edge_buttons: bool = False,
                    graph_option: str = None) -> str:
@@ -449,6 +452,72 @@ class PySTIXView:
 
         name = 'stix-graph.html'
         html_graph = self.__network.generate_html(name)
+        bhtml = BeautifulSoup(html_graph, 'html.parser')
+        div_tag = bhtml.new_tag("div")
+        div_tag['id'] = "code_section" 
+        div_tag['style'] = "position: absolute;"
+        div_tag['style'] += "width: 30%;"
+        div_tag['style'] += "font-family: monospace;"
+        div_tag['style'] += "top: 0; left: 0;"
+        div_tag['style'] += "z-index: 1;"
+        div_tag['style'] += "font-size: 13;"
+        div_tag['style'] += "background-color: #fff6a8;"
+        div_tag['style'] += "font-color: #000000;"
+        div_tag['style'] += "display: none;"
+        div_tag['style'] += "border: 1px solid black;"
+        div_tag['style'] += "resize: both;"
+        div_tag['style'] += "overflow: auto;"
+        
+        pre_tag = bhtml.new_tag("pre")
+        pre_tag['style'] = "width: 100%; height: 100%;"
+        pre_tag['style'] += "white-space: pre;"
+        pre_tag['style'] += "background-color: #fff6a8;"
+
+        div_tag.append(pre_tag)
+        bhtml.find('div', {'class': 'card-body'}).insert_after(div_tag)
+
+        script_tag = bhtml.new_tag("script")
+        script_tag.string = """network.on('select', function(){
+          document.querySelector("#code_section").style.display="none";
+          document.querySelector("#code_section pre").textContent = ""
+          if (network.getSelectedNodes()) {
+              const selectedNode = network.getSelectedNodes()[0];
+              if (allNodes[selectedNode]) {
+                  document.querySelector("#code_section").style.display="block";
+                  document.querySelector("#code_section pre").textContent = 
+                    JSON.stringify(JSON.parse(allNodes[selectedNode].stix), null, 2);
+              }
+          } 
+        })
+        """
+        bhtml.find('body').append(script_tag)
+
+        return str(bhtml)
+
+
+    def show_graph(self, show_physics_buttons: bool = False,
+                   show_node_buttons: bool = False,
+                   show_edge_buttons: bool = False,
+                   graph_option: str = None) -> str:
+        """Generate and return HTML code to render the graph.
+        In case of Jupyter Notebook, the graph is rendered
+        via IPython.display.HTML.
+
+        :param show_physics_buttons: Set to True to show graph
+             physics options menu
+        :param show_node_buttons: Set to True to show graph node
+             options menu
+        :param show_edge_buttons: Set to True to show graph edge
+             options menu
+        :param graph_option:
+        :return: HTML code representin the graph.
+             If execute in a Jupyter Notebook,
+             an IPython.display.HTML object is returned
+        """
+
+        html_graph = self._generate_graph(show_physics_buttons,
+                                         show_node_buttons,
+                                         show_edge_buttons)
         if self.__notebook:
             return HTML(html_graph)
         else:
@@ -469,18 +538,12 @@ class PySTIXView:
              edge options menu
         :param graph_option:
         """
-        buttons_filter = []
-        if show_physics_buttons:
-            buttons_filter.append('physics')
-        if show_node_buttons:
-            buttons_filter.append('nodes')
-        if show_edge_buttons:
-            buttons_filter.append('edges')
 
-        if buttons_filter:
-            self.__network.show_buttons(filter_=buttons_filter)
-
-        self.__network.write_html(name)
+        html_code = self._generate_graph(show_physics_buttons,
+                                        show_node_buttons,
+                                        show_edge_buttons)
+        with open(name, 'w') as fd:
+            fd.write(html_code)
 
     def to_json(self) -> str:
         """Get graph data in JSON format
