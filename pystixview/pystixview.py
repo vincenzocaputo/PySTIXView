@@ -1,13 +1,18 @@
-from pyvis.network import Network
+import os
+import json
+import base64
+import warnings
+import re
 
-from IPython.display import HTML
-
+from pathlib import Path
 from bs4 import BeautifulSoup
 
+from IPython.display import HTML
+from pyvis.network import Network
+
 from stix2 import parsing
-from pathlib import Path
-from stix2.v21 import Bundle
 from stix2.v21 import (
+                    Bundle,
                     TLP_AMBER,
                     TLP_GREEN,
                     TLP_RED,
@@ -45,11 +50,6 @@ from stix2.v21.sdo import (
                         ThreatActor,
                         Tool,
                         Vulnerability)
-import os
-import json
-import base64
-import warnings
-import re
 
 
 class PySTIXView:
@@ -86,13 +86,18 @@ class PySTIXView:
             }
     }
 
+    __STYLES = ['square-flat',
+              'square-dark',
+              'square-lite',
+              'noback-dark',
+              'noback-flat',
+              'round-flat']
+
     def __init__(self, height: str, width: str, notebook: bool = False,
                  select_menu: bool = False, filter_menu: bool = False,
                  style: str = 'square-flat'):
 
         self.__notebook = notebook
-        self.__height = height
-        self.__width = width
         if notebook:
             self.__network = Network(height, width, directed=True,
                                      notebook=notebook,
@@ -106,18 +111,12 @@ class PySTIXView:
                                      filter_menu=filter_menu)
         self.__icons_path = Path(os.path.dirname(__file__)) / 'icons'
 
-        STYLES = ['square-flat',
-                  'square-dark',
-                  'square-lite',
-                  'noback-dark',
-                  'noback-flat',
-                  'round-flat']
 
-        if style in STYLES:
+        if style in self.__STYLES:
             self.__style = style
         else:
             raise ValueError(f"Invalid style. \
-                    Select from the following: {', '.join(STYLES)}")
+                    Select from the following: {', '.join(self.__STYLES)}")
 
         self.__network.barnes_hut(gravity=-5000,
                                   central_gravity=0,
@@ -182,10 +181,9 @@ class PySTIXView:
                 return "observable"
 
         if isinstance(object_to_test, MarkingDefinition):
-            if object_to_test['id'] in self.__TLP_MARKINGS.keys():
+            if object_to_test['id'] in self.__TLP_MARKINGS:
                 return self.__TLP_MARKINGS[object_to_test['id']]['label']
-            else:
-                return "marking-definition"
+            return "marking-definition"
 
         return None
 
@@ -236,7 +234,7 @@ class PySTIXView:
              is already defined.
         """
 
-        if custom_type not in self.__custom_types.keys():
+        if custom_type not in self.__custom_types:
             if node_icon:
                 if isinstance(node_icon, str):
                     if node_icon.startswith('http'):
@@ -253,7 +251,7 @@ class PySTIXView:
                     raise TypeError("Provide a valid color in hex rgb format")
             self.__custom_types[custom_type]['label_name'] = label_name
         else:
-            raise Exception(f"The custom type {custom_type}\
+            raise ValueError(f"The custom type {custom_type}\
                      is already defined")
 
     def add_node(self,
@@ -264,19 +262,11 @@ class PySTIXView:
                  Tool | Vulnerability | MarkingDefinition | AutonomousSystem |
                  DomainName | EmailAddress | EmailMessage | File |
                  IPv4Address | IPv6Address | MACAddress | NetworkTraffic |
-                 URL | UserAccount | str | dict,
-                 is_custom: bool = True,
-                 node_icon: str = None,
-                 color: str = None) -> bool:
+                 URL | UserAccount | str | dict) -> bool:
         """Add a node to the graph
 
         :param stix_obj: STIX Object (SDO, Observable or MarkingDefinition
              to add to the graph
-        :param is_custom: Set to True to add a custom STIX Object
-             (one of node_icon or color must be provided)
-        :param node_icon: URLs or local path to the image to use as node icon
-        :param color: Color to be assigned to the node in place of the image.
-             Hex RGB format is accepted
         :return: True if the node was added correctly
         :raises KeyError: If a custom type does not have any
              image or color for the node
@@ -284,7 +274,7 @@ class PySTIXView:
         """
 
         node_img = None
-        if isinstance(stix_obj, dict) or isinstance(stix_obj, str):
+        if isinstance(stix_obj, (dict, str)):
             stix_obj = parsing.parse(stix_obj, allow_custom=True)
         else:
             if not hasattr(stix_obj, 'type'):
@@ -294,7 +284,7 @@ class PySTIXView:
         label_name = 'name'
         if not stix_object_type:
             stix_type = stix_obj['type']
-            if stix_type in self.__custom_types.keys():
+            if stix_type in self.__custom_types:
                 if 'image' in self.__custom_types[stix_type].keys():
                     node_shape = "image"
                     node_img = self.__custom_types[stix_type]['image']
@@ -353,14 +343,13 @@ class PySTIXView:
                                     stix=node_title,
                                     **stix_obj)
             return True
-        else:
-            self.__network.add_node(node_id,
-                                    label=node_label,
-                                    shape=node_shape,
-                                    color=node_color,
-                                    stix=node_title,
-                                    **stix_obj)
-            return True
+        self.__network.add_node(node_id,
+                                label=node_label,
+                                shape=node_shape,
+                                color=node_color,
+                                stix=node_title,
+                                **stix_obj)
+        return True
 
     def add_bundle(self, bundle: Bundle | dict | str) -> bool:
         """Add a Bundle to the graph
@@ -421,8 +410,7 @@ class PySTIXView:
 
     def _generate_graph(self, show_physics_buttons: bool = False,
                    show_node_buttons: bool = False,
-                   show_edge_buttons: bool = False,
-                   graph_option: str = None) -> str:
+                   show_edge_buttons: bool = False) -> str:
         """Generate and return HTML code to render the graph.
         In case of Jupyter Notebook, the graph is rendered
         via IPython.display.HTML.
@@ -433,7 +421,6 @@ class PySTIXView:
              options menu
         :param show_edge_buttons: Set to True to show graph edge
              options menu
-        :param graph_option:
         :return: HTML code representin the graph.
              If execute in a Jupyter Notebook,
              an IPython.display.HTML object is returned
@@ -454,7 +441,7 @@ class PySTIXView:
         html_graph = self.__network.generate_html(name)
         bhtml = BeautifulSoup(html_graph, 'html.parser')
         div_tag = bhtml.new_tag("div")
-        div_tag['id'] = "code_section" 
+        div_tag['id'] = "code_section"
         div_tag['style'] = "position: absolute;"
         div_tag['style'] += "width: 30%;"
         div_tag['style'] += "font-family: monospace;"
@@ -467,7 +454,6 @@ class PySTIXView:
         div_tag['style'] += "border: 1px solid black;"
         div_tag['style'] += "resize: both;"
         div_tag['style'] += "overflow: auto;"
-        
         pre_tag = bhtml.new_tag("pre")
         pre_tag['style'] = "width: 100%; height: 100%;"
         pre_tag['style'] += "white-space: pre;"
@@ -497,8 +483,7 @@ class PySTIXView:
 
     def show_graph(self, show_physics_buttons: bool = False,
                    show_node_buttons: bool = False,
-                   show_edge_buttons: bool = False,
-                   graph_option: str = None) -> str:
+                   show_edge_buttons: bool = False) -> str:
         """Generate and return HTML code to render the graph.
         In case of Jupyter Notebook, the graph is rendered
         via IPython.display.HTML.
@@ -509,7 +494,6 @@ class PySTIXView:
              options menu
         :param show_edge_buttons: Set to True to show graph edge
              options menu
-        :param graph_option:
         :return: HTML code representin the graph.
              If execute in a Jupyter Notebook,
              an IPython.display.HTML object is returned
@@ -520,13 +504,11 @@ class PySTIXView:
                                          show_edge_buttons)
         if self.__notebook:
             return HTML(html_graph)
-        else:
-            return html_graph
+        return html_graph
 
     def save_graph(self, name, show_physics_buttons: bool = False,
                    show_node_buttons: bool = False,
-                   show_edge_buttons: bool = False,
-                   graph_option: str = None):
+                   show_edge_buttons: bool = False):
         """Generate and save HTML file containing the graph.
 
         :param name: Name of the file to save the graph as
@@ -536,13 +518,12 @@ class PySTIXView:
              node options menu
         :param show_edge_buttons: Set to True to show graph
              edge options menu
-        :param graph_option:
         """
 
         html_code = self._generate_graph(show_physics_buttons,
                                         show_node_buttons,
                                         show_edge_buttons)
-        with open(name, 'w') as fd:
+        with open(name, 'w', encoding="utf-8") as fd:
             fd.write(html_code)
 
     def to_json(self) -> str:
