@@ -87,11 +87,11 @@ class PySTIXView:
     }
 
     __STYLES = ['square-flat',
-              'square-dark',
-              'square-lite',
-              'noback-dark',
-              'noback-flat',
-              'round-flat']
+                'square-dark',
+                'square-lite',
+                'noback-dark',
+                'noback-flat',
+                'round-flat']
 
     def __init__(self, height: str, width: str, notebook: bool = False,
                  select_menu: bool = False, filter_menu: bool = False,
@@ -110,7 +110,6 @@ class PySTIXView:
                                      select_menu=select_menu,
                                      filter_menu=filter_menu)
         self.__icons_path = Path(os.path.dirname(__file__)) / 'icons'
-
 
         if style in self.__STYLES:
             self.__style = style
@@ -407,10 +406,9 @@ class PySTIXView:
                        relationship.target_ref,
                        relationship.relationship_type)
 
-
     def _generate_graph(self, show_physics_buttons: bool = False,
-                   show_node_buttons: bool = False,
-                   show_edge_buttons: bool = False) -> str:
+                        show_node_buttons: bool = False,
+                        show_edge_buttons: bool = False) -> str:
         """Generate and return HTML code to render the graph.
         In case of Jupyter Notebook, the graph is rendered
         via IPython.display.HTML.
@@ -470,16 +468,16 @@ class PySTIXView:
               const selectedNode = network.getSelectedNodes()[0];
               if (allNodes[selectedNode]) {
                   document.querySelector("#code_section").style.display="block";
-                  document.querySelector("#code_section pre").textContent = 
-                    JSON.stringify(JSON.parse(allNodes[selectedNode].stix), null, 2);
+                  document.querySelector("#code_section pre").textContent =
+                    JSON.stringify(JSON.parse(
+                        allNodes[selectedNode].stix), null, 2);
               }
-          } 
+          }
         })
         """
         bhtml.find('body').append(script_tag)
 
         return str(bhtml)
-
 
     def show_graph(self, show_physics_buttons: bool = False,
                    show_node_buttons: bool = False,
@@ -500,8 +498,8 @@ class PySTIXView:
         """
 
         html_graph = self._generate_graph(show_physics_buttons,
-                                         show_node_buttons,
-                                         show_edge_buttons)
+                                          show_node_buttons,
+                                          show_edge_buttons)
         if self.__notebook:
             return HTML(html_graph)
         return html_graph
@@ -521,8 +519,8 @@ class PySTIXView:
         """
 
         html_code = self._generate_graph(show_physics_buttons,
-                                        show_node_buttons,
-                                        show_edge_buttons)
+                                         show_node_buttons,
+                                         show_edge_buttons)
         with open(name, 'w', encoding="utf-8") as fd:
             fd.write(html_code)
 
