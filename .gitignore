@@ -6,4 +6,4 @@ lib/
 dist/
 .coverage
 *.egg-info
-docs/build/
+docs/_build/

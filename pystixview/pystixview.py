@@ -58,13 +58,14 @@ class PySTIXView:
     :param height: Height of the graph section in px
     :param width: Width of the graph section in px
     :param notebook: If True render the graph in a Jupyter Notebook
-    :param style: Style of node icons. It can be one of the following \
-            square-flat (default)
-            square-dark
-            square-lite
-            noback-flat
-            noback-dark
-            round-flat
+    :param style: Style of node icons. It can be one of the following:
+
+            * square-flat (default)
+            * square-dark
+            * square-lite
+            * noback-flat
+            * noback-dark
+            * round-flat
     """
 
     __TLP_MARKINGS = {
