@@ -1,9 +1,10 @@
-*venv/
 __pycache__/
+*venv/
 *.py[cod]
 *$py.class
+*.egg-info
 lib/
 dist/
-.coverage
-*.egg-info
 docs/_build/
+.ipynb_checkpoints/
+.coverage
