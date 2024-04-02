@@ -289,7 +289,6 @@ class PySTIXView:
                                     color=node_color,
                                     **node)
 
-
     def add_node(self,
                  stix_obj: AttackPattern | Campaign | CourseOfAction |
                  Grouping | Identity | Indicator | Infrastructure |
@@ -431,20 +430,20 @@ class PySTIXView:
 
         if self.__notebook:
             self.__network = Network(height, width, directed=True,
-                                    notebook=self.__notebook,
-                                    select_menu=select_menu,
-                                    filter_menu=filter_menu,
-                                    cdn_resources='in_line')
+                                     notebook=self.__notebook,
+                                     select_menu=select_menu,
+                                     filter_menu=filter_menu,
+                                     cdn_resources='in_line')
         else:
             self.__network = Network(height, width, directed=True,
-                                 notebook=self.__notebook,
-                                 select_menu=select_menu,
-                                 filter_menu=filter_menu)
+                                     notebook=self.__notebook,
+                                     select_menu=select_menu,
+                                     filter_menu=filter_menu)
 
         self.__network.barnes_hut(gravity=-5000,
                                   central_gravity=0,
                                   spring_length=50,
-                                  damping=0.9,overlap=0)
+                                  damping=0.9, overlap=0)
 
         buttons_filter = []
         if show_physics_buttons:
@@ -461,8 +460,8 @@ class PySTIXView:
             self._add_node(node_id, node, style)
         for edges in self.__graph['edges']:
             self._add_edge(edges['from'],
-                             edges['to'],
-                             edges['type'])
+                           edges['to'],
+                           edges['type'])
 
         name = 'stix-graph.html'
         html_graph = self.__network.generate_html(name)
