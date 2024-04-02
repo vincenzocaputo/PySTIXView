@@ -17,8 +17,8 @@ PySTIXView is based on `pyvis <https://github.com/WestHealth/pyvis/>` that allow
    :caption: Contents:
 
    installation
-   usage
    documentation
+   usage
    credits
 
 

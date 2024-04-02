@@ -34,10 +34,10 @@ Below is a simple example to create a graph from the STIX2 Bundle [Threat Actor 
 ```python
 from pystixview import PySTIXView
 
-stix_graph = PySTIXView("600px", "100%")
+stix_graph = PySTIXView()
 with open("threat-actor-leveraging-attack-patterns-and-malware.json", "r") as fd:
     stix_graph.add_bundle(fd.read())
-stix_graph.save_graph("threat-actor-leveraging-attack-patterns-and-malware.html")
+stix_graph.save_graph("threat-actor-leveraging-attack-patterns-and-malware.html", width="100%", height="600px")
 ```
 
 PySTIXView can be used also in Jupyter Notebook:

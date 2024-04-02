@@ -1,11 +1,18 @@
+import os
+import json
+import base64
+import warnings
+import re
+
+from pathlib import Path
+from bs4 import BeautifulSoup
+
+from IPython.display import IFrame
 from pyvis.network import Network
 
-from IPython.display import HTML
-
 from stix2 import parsing
-from pathlib import Path
-from stix2.v21 import Bundle
 from stix2.v21 import (
+                    Bundle,
                     TLP_AMBER,
                     TLP_GREEN,
                     TLP_RED,
@@ -43,26 +50,12 @@ from stix2.v21.sdo import (
                         ThreatActor,
                         Tool,
                         Vulnerability)
-import os
-import json
-import base64
-import warnings
-import re
 
 
 class PySTIXView:
     """Class to create a graph representing STIX objects and relationships
 
-    :param height: Height of the graph section in px
-    :param width: Width of the graph section in px
     :param notebook: If True render the graph in a Jupyter Notebook
-    :param style: Style of node icons. It can be one of the following \
-            square-flat (default)
-            square-dark
-            square-lite
-            noback-flat
-            noback-dark
-            round-flat
     """
 
     __TLP_MARKINGS = {
@@ -84,44 +77,22 @@ class PySTIXView:
             }
     }
 
-    def __init__(self, height: str, width: str, notebook: bool = False,
-                 select_menu: bool = False, filter_menu: bool = False,
-                 style: str = 'square-flat'):
+    __STYLES = ['square-flat',
+                'square-dark',
+                'square-lite',
+                'noback-dark',
+                'noback-flat',
+                'round-flat']
+
+    def __init__(self, notebook: bool = False):
 
         self.__notebook = notebook
-        self.__height = height
-        self.__width = width
-        if notebook:
-            self.__network = Network(height, width, directed=True,
-                                     notebook=notebook,
-                                     select_menu=select_menu,
-                                     filter_menu=filter_menu,
-                                     cdn_resources='in_line')
-        else:
-            self.__network = Network(height, width, directed=True,
-                                     notebook=notebook,
-                                     select_menu=select_menu,
-                                     filter_menu=filter_menu)
+        self.__network = None
         self.__icons_path = Path(os.path.dirname(__file__)) / 'icons'
-
-        STYLES = ['square-flat',
-                  'square-dark',
-                  'square-lite',
-                  'noback-dark',
-                  'noback-flat',
-                  'round-flat']
-
-        if style in STYLES:
-            self.__style = style
-        else:
-            raise ValueError(f"Invalid style. \
-                    Select from the following: {', '.join(STYLES)}")
-
-        self.__network.barnes_hut(gravity=-5000,
-                                  central_gravity=0,
-                                  spring_length=50,
-                                  damping=0.9,
-                                  overlap=0)
+        self.__graph = {
+                'nodes': {},
+                'edges': []
+            }
         self.__custom_types = {}
 
     def __get_stix_object_type(self, object_to_test) -> str:
@@ -180,10 +151,9 @@ class PySTIXView:
                 return "observable"
 
         if isinstance(object_to_test, MarkingDefinition):
-            if object_to_test['id'] in self.__TLP_MARKINGS.keys():
+            if object_to_test['id'] in self.__TLP_MARKINGS:
                 return self.__TLP_MARKINGS[object_to_test['id']]['label']
-            else:
-                return "marking-definition"
+            return "marking-definition"
 
         return None
 
@@ -234,7 +204,7 @@ class PySTIXView:
              is already defined.
         """
 
-        if custom_type not in self.__custom_types.keys():
+        if custom_type not in self.__custom_types:
             if node_icon:
                 if isinstance(node_icon, str):
                     if node_icon.startswith('http'):
@@ -251,48 +221,19 @@ class PySTIXView:
                     raise TypeError("Provide a valid color in hex rgb format")
             self.__custom_types[custom_type]['label_name'] = label_name
         else:
-            raise Exception(f"The custom type {custom_type}\
+            raise ValueError(f"The custom type {custom_type}\
                      is already defined")
 
-    def add_node(self,
-                 stix_obj: AttackPattern | Campaign | CourseOfAction |
-                 Grouping | Identity | Indicator | Infrastructure |
-                 IntrusionSet | Location | Malware | MalwareAnalysis |
-                 Note | ObservedData | Opinion | Report | ThreatActor |
-                 Tool | Vulnerability | MarkingDefinition | AutonomousSystem |
-                 DomainName | EmailAddress | EmailMessage | File |
-                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic |
-                 URL | UserAccount | str | dict,
-                 is_custom: bool = True,
-                 node_icon: str = None,
-                 color: str = None) -> bool:
-        """Add a node to the graph
-
-        :param stix_obj: STIX Object (SDO, Observable or MarkingDefinition
-             to add to the graph
-        :param is_custom: Set to True to add a custom STIX Object
-             (one of node_icon or color must be provided)
-        :param node_icon: URLs or local path to the image to use as node icon
-        :param color: Color to be assigned to the node in place of the image.
-             Hex RGB format is accepted
-        :return: True if the node was added correctly
-        :raises KeyError: If a custom type does not have any
-             image or color for the node
-        :raises TypeError: If an invalid STIX Domain Object is provided
-        """
-
+    def _add_node(self, node_id: str,
+                  node: dict,
+                  style: str):
         node_img = None
-        if isinstance(stix_obj, dict) or isinstance(stix_obj, str):
-            stix_obj = parsing.parse(stix_obj, allow_custom=True)
-        else:
-            if not hasattr(stix_obj, 'type'):
-                raise TypeError("Invalid data provided")
 
-        stix_object_type = self.__get_stix_object_type(stix_obj)
         label_name = 'name'
+        stix_object_type = node['stix_type']
+        stix_type = node['type']
         if not stix_object_type:
-            stix_type = stix_obj['type']
-            if stix_type in self.__custom_types.keys():
+            if stix_type in self.__custom_types:
                 if 'image' in self.__custom_types[stix_type].keys():
                     node_shape = "image"
                     node_img = self.__custom_types[stix_type]['image']
@@ -307,17 +248,16 @@ class PySTIXView:
                 warnings.warn(f"STIX Object {stix_type} is not defined")
                 icon_path = (self.__icons_path /
                              "custom" /
-                             f"{self.__style}.png")
+                             f"{style}.png")
                 node_shape = "image"
                 node_img = self.__image_to_base64(icon_path)
         else:
-            stix_type = stix_obj['type']
             if stix_type == "marking-definition":
                 icon_folder = "generic"
-                icon_filename = f"{stix_object_type}-{self.__style}.png"
+                icon_filename = f"{stix_object_type}-{style}.png"
             else:
                 icon_folder = f"{stix_object_type}/{stix_type}"
-                icon_filename = f"{self.__style}.png"
+                icon_filename = f"{style}.png"
             icon_path = self.__icons_path / icon_folder / icon_filename
             if icon_path.exists():
                 node_shape = "image"
@@ -327,35 +267,67 @@ class PySTIXView:
                 node_shape = "dot"
                 node_color = "#FF0000"
 
-        node_id = stix_obj['id']
-        if hasattr(stix_obj, label_name) or label_name in stix_obj.keys():
-            node_label = stix_obj[label_name]
-        elif hasattr(stix_obj, 'value') or 'value' in stix_obj.keys():
-            node_label = stix_obj['value']
+        if hasattr(node, label_name) or label_name in node.keys():
+            node_label = node[label_name]
+        elif hasattr(node, 'value') or 'value' in node.keys():
+            node_label = node['value']
         else:
             warnings.warn(f"STIX Object does not \
                     contain the field {label_name}")
-            node_label = stix_obj['type']
+            node_label = node['type']
+
+        if node_img:
+            self.__network.add_node(node_id,
+                                    shape=node_shape,
+                                    image=node_img,
+                                    label=node_label,
+                                    **node)
+        else:
+            self.__network.add_node(node_id,
+                                    shape=node_shape,
+                                    label=node_label,
+                                    color=node_color,
+                                    **node)
+
+    def add_node(self,
+                 stix_obj: AttackPattern | Campaign | CourseOfAction |
+                 Grouping | Identity | Indicator | Infrastructure |
+                 IntrusionSet | Location | Malware | MalwareAnalysis |
+                 Note | ObservedData | Opinion | Report | ThreatActor |
+                 Tool | Vulnerability | MarkingDefinition | AutonomousSystem |
+                 DomainName | EmailAddress | EmailMessage | File |
+                 IPv4Address | IPv6Address | MACAddress | NetworkTraffic |
+                 URL | UserAccount | str | dict) -> bool:
+        """Add a node to the graph
+
+        :param stix_obj: STIX Object (SDO, Observable or MarkingDefinition
+             to add to the graph
+        :return: True if the node was added correctly
+        :raises KeyError: If a custom type does not have any
+             image or color for the node
+        :raises TypeError: If an invalid STIX Domain Object is provided
+        """
+        if isinstance(stix_obj, (dict, str)):
+            stix_obj = parsing.parse(stix_obj, allow_custom=True)
+        else:
+            if not hasattr(stix_obj, 'type'):
+                raise TypeError("Invalid data provided")
+
+        stix_object_type = self.__get_stix_object_type(stix_obj)
+
+        node_id = stix_obj['id']
 
         if isinstance(stix_obj, dict):
             node_title = json.dumps(stix_obj)
         else:
             node_title = stix_obj.serialize(pretty=True)
+            stix_obj = json.loads(node_title)
 
-        if node_img:
-            self.__network.add_node(node_id,
-                                    label=node_label,
-                                    shape=node_shape,
-                                    image=node_img,
-                                    title=node_title)
-            return True
-        else:
-            self.__network.add_node(node_id,
-                                    label=node_label,
-                                    shape=node_shape,
-                                    color=node_color,
-                                    title=node_title)
-            return True
+        node = stix_obj
+        node['stix'] = node_title
+        node['stix_type'] = stix_object_type
+        self.__graph['nodes'][node_id] = node
+        return True
 
     def add_bundle(self, bundle: Bundle | dict | str) -> bool:
         """Add a Bundle to the graph
@@ -382,16 +354,20 @@ class PySTIXView:
                         self.add_node(
                                 self.__TLP_MARKINGS[marking['marking_ref']]
                                 ['object'])
-                        self._add_edge(marking['marking_ref'],
-                                       obj['id'],
-                                       'applied-to')
+                        self.__graph['edges'].append({
+                            'from': marking['marking_ref'],
+                            'to': obj['id'],
+                            'type': 'applied-to'
+                        })
         # Parse object_refs
         for obj in bundle.objects:
             if hasattr(obj, 'object_refs'):
                 for ref in obj['object_refs']:
-                    self._add_edge(obj['id'],
-                                   ref,
-                                   'refers-to')
+                    self.__graph['edges'].append({
+                        'from': obj['id'],
+                        'to': ref,
+                        'type': 'refers-to'
+                    })
 
     def add_relationship(self, relationship: Relationship |
                          str | dict) -> bool:
@@ -409,29 +385,67 @@ class PySTIXView:
             relationship = parsing.parse(relationship, allow_custom=True)
         elif not isinstance(relationship, Relationship):
             raise TypeError("Invalid data provided")
-        self._add_edge(relationship.source_ref,
-                       relationship.target_ref,
-                       relationship.relationship_type)
+        self.__graph['edges'].append({
+                'from': relationship.source_ref,
+                'to': relationship.target_ref,
+                'type': relationship.relationship_type
+            })
 
-    def show_graph(self, show_physics_buttons: bool = False,
-                   show_node_buttons: bool = False,
-                   show_edge_buttons: bool = False,
-                   graph_option: str = None) -> str:
+    def _generate_graph(self,
+                        name: str,
+                        width: str,
+                        height: str,
+                        select_menu: bool = False,
+                        filter_menu: bool = False,
+                        style: str = 'square-flat',
+                        show_physics_buttons: bool = False,
+                        show_node_buttons: bool = False,
+                        show_edge_buttons: bool = False) -> str:
         """Generate and return HTML code to render the graph.
         In case of Jupyter Notebook, the graph is rendered
         via IPython.display.HTML.
 
+        :param name: Name of the output file that will contain the graph
+        :param height: Height of the graph section in px
+        :param width: Width of the graph section in px
+        :param style: Style of node icons. It can be one of the following:
+
+                * square-flat (default)
+                * square-dark
+                * square-lite
+                * noback-flat
+                * noback-dark
+                * round-flat
         :param show_physics_buttons: Set to True to show graph
              physics options menu
         :param show_node_buttons: Set to True to show graph node
              options menu
         :param show_edge_buttons: Set to True to show graph edge
              options menu
-        :param graph_option:
         :return: HTML code representin the graph.
              If execute in a Jupyter Notebook,
              an IPython.display.HTML object is returned
         """
+        if style not in self.__STYLES:
+            raise ValueError(f"Invalid style {style}. \
+                    Select from the following: {', '.join(self.__STYLES)}")
+
+        if self.__notebook:
+            self.__network = Network(height, width, directed=True,
+                                     notebook=self.__notebook,
+                                     select_menu=select_menu,
+                                     filter_menu=filter_menu,
+                                     cdn_resources='in_line')
+        else:
+            self.__network = Network(height, width, directed=True,
+                                     notebook=self.__notebook,
+                                     select_menu=select_menu,
+                                     filter_menu=filter_menu)
+
+        self.__network.barnes_hut(gravity=-5000,
+                                  central_gravity=0,
+                                  spring_length=50,
+                                  damping=0.9, overlap=0)
 
         buttons_filter = []
         if show_physics_buttons:
@@ -444,40 +458,156 @@ class PySTIXView:
         if buttons_filter:
             self.__network.show_buttons(filter_=buttons_filter)
 
-        name = 'stix-graph.html'
-        html_graph = self.__network.generate_html(name)
-        if self.__notebook:
-            return HTML(html_graph)
-        else:
-            return html_graph
+        for node_id, node in self.__graph['nodes'].items():
+            self._add_node(node_id, node, style)
+        for edges in self.__graph['edges']:
+            self._add_edge(edges['from'],
+                           edges['to'],
+                           edges['type'])
 
-    def save_graph(self, name, show_physics_buttons: bool = False,
+        html_graph = self.__network.generate_html(name)
+        bhtml = BeautifulSoup(html_graph, 'html.parser')
+        div_tag = bhtml.new_tag("div")
+        div_tag['id'] = "code_section"
+        div_tag['style'] = "position: absolute;"
+        div_tag['style'] += "width: 30%;"
+        div_tag['style'] += "height: 50%;"
+        div_tag['style'] += "font-family: monospace;"
+        div_tag['style'] += "top: 0; left: 0;"
+        div_tag['style'] += "z-index: 1;"
+        div_tag['style'] += "font-size: 13;"
+        div_tag['style'] += "background-color: #fff6a8;"
+        div_tag['style'] += "font-color: #000000;"
+        div_tag['style'] += "display: none;"
+        div_tag['style'] += "border: 1px solid black;"
+        div_tag['style'] += "resize: both;"
+        div_tag['style'] += "overflow: auto;"
+        pre_tag = bhtml.new_tag("pre")
+        pre_tag['style'] = "width: 100%; height: 100%;"
+        pre_tag['style'] += "white-space: pre;"
+        pre_tag['style'] += "background-color: #fff6a8;"
+
+        div_tag.append(pre_tag)
+        bhtml.find('div', {'class': 'card-body'}).insert_after(div_tag)
+
+        script_tag = bhtml.new_tag("script")
+        script_tag.string = """network.on('select', function(){
+          document.querySelector("#code_section").style.display="none";
+          document.querySelector("#code_section pre").textContent = ""
+          if (network.getSelectedNodes()) {
+              const selectedNode = network.getSelectedNodes()[0];
+              if (allNodes[selectedNode]) {
+                  document.querySelector("#code_section").style.display="block";
+                  document.querySelector("#code_section pre").textContent =
+                    JSON.stringify(JSON.parse(
+                        allNodes[selectedNode].stix), null, 2);
+              }
+          }
+        })
+        """
+        bhtml.find('body').append(script_tag)
+
+        return str(bhtml)
+
+    def show_graph(self,
+                   name: str,
+                   width: str,
+                   height: str,
+                   select_menu: bool = False,
+                   filter_menu: bool = False,
+                   style: str = 'square-flat',
+                   show_physics_buttons: bool = False,
                    show_node_buttons: bool = False,
-                   show_edge_buttons: bool = False,
-                   graph_option: str = None):
+                   show_edge_buttons: bool = False) -> str:
+        """Generate and return HTML code to render the graph.
+        In case of Jupyter Notebook, the graph is rendered
+        via IPython.display.HTML.
+
+        :param name: Name of the output file that will contain the graph
+        :param height: Height of the graph section in px
+        :param width: Width of the graph section in px
+        :param style: Style of node icons. It can be one of the following:
+
+                * square-flat (default)
+                * square-dark
+                * square-lite
+                * noback-flat
+                * noback-dark
+                * round-flat
+        :param show_physics_buttons: Set to True to show graph
+             physics options menu
+        :param show_node_buttons: Set to True to show graph node
+             options menu
+        :param show_edge_buttons: Set to True to show graph edge
+             options menu
+        :return: HTML code representin the graph.
+             If execute in a Jupyter Notebook,
+             an IPython.display.HTML object is returned
+        """
+
+        if self.__notebook:
+            self.save_graph(name,
+                            width,
+                            height,
+                            select_menu,
+                            filter_menu,
+                            style,
+                            show_physics_buttons,
+                            show_node_buttons,
+                            show_edge_buttons)
+            return IFrame(name, width, height)
+        else:
+            return self._generate_graph(name,
+                                        width,
+                                        height,
+                                        select_menu,
+                                        filter_menu,
+                                        style,
+                                        show_physics_buttons,
+                                        show_node_buttons,
+                                        show_edge_buttons)
+
+    def save_graph(self, name,
+                   width: str,
+                   height: str,
+                   select_menu: bool = False,
+                   filter_menu: bool = False,
+                   style: str = 'square-flat',
+                   show_physics_buttons: bool = False,
+                   show_node_buttons: bool = False,
+                   show_edge_buttons: bool = False) -> str:
         """Generate and save HTML file containing the graph.
 
         :param name: Name of the file to save the graph as
+        :param height: Height of the graph section in px
+        :param width: Width of the graph section in px
+        :param style: Style of node icons. It can be one of the following:
+
+                * square-flat (default)
+                * square-dark
+                * square-lite
+                * noback-flat
+                * noback-dark
+                * round-flat
         :param show_physics_buttons: Set to True to show graph
              physics options menu
         :param show_node_buttons: Set to True to show graph
              node options menu
         :param show_edge_buttons: Set to True to show graph
              edge options menu
-        :param graph_option:
         """
-        buttons_filter = []
-        if show_physics_buttons:
-            buttons_filter.append('physics')
-        if show_node_buttons:
-            buttons_filter.append('nodes')
-        if show_edge_buttons:
-            buttons_filter.append('edges')
 
-        if buttons_filter:
-            self.__network.show_buttons(filter_=buttons_filter)
-
-        self.__network.write_html(name)
+        html_graph = self._generate_graph(name,
+                                          width,
+                                          height,
+                                          select_menu,
+                                          filter_menu,
+                                          style,
+                                          show_physics_buttons,
+                                          show_node_buttons,
+                                          show_edge_buttons)
+        with open(name, 'w', encoding="utf-8") as fd:
+            fd.write(html_graph)
 
     def to_json(self) -> str:
         """Get graph data in JSON format
@@ -485,4 +615,4 @@ class PySTIXView:
         :return: JSON representation of the graph
         """
 
-        return json.dumps(self.__network.get_network_data())
+        return json.dumps(self.__graph)

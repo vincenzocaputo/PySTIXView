@@ -16,3 +16,8 @@ PySTIXView can be used also in Jupyter Notebook:
 
 .. image:: https://raw.githubusercontent.com/vincenzocaputo/PySTIXView/main/_media/jupyter_example.png
 
+Example
+=========
+
+
+
