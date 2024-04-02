@@ -4,7 +4,7 @@ from pystixview import PySTIXView
 from stix2 import Bundle, Relationship
 from stix2.parsing import parse
 
-from IPython.display import HTML
+from IPython.display import IFrame
 
 import warnings
 import base64
@@ -154,7 +154,7 @@ class TestPySTIXView(unittest.TestCase):
             "description": "Test"
         }
         """)
-        graph_html =  self.graph.show_graph(width="100%", height="100%")
+        graph_html = self.graph.show_graph(name='test.html', width="100%", height="100%")
         with open('tests/test-icon.png', 'rb') as fd:
             img_b64 = f"data:image/png;base64,{base64.b64encode(fd.read()).decode('utf-8')}"
             self.assertTrue( img_b64 in graph_html )
@@ -175,7 +175,7 @@ class TestPySTIXView(unittest.TestCase):
             "description": "Test"
         }
         """)
-        graph_html =  self.graph.show_graph(width="100%", height="100%")
+        graph_html =  self.graph.show_graph(name='test.html', width="100%", height="100%")
         self.assertTrue( url in graph_html )
 
     def test_custom_type_icon_fail(self):
@@ -210,7 +210,7 @@ class TestPySTIXView(unittest.TestCase):
             "description": "Test"
         }
         """)
-        graph_html =  self.graph.show_graph(width="100%", height="100%")
+        graph_html =  self.graph.show_graph(name='test.html', width="100%", height="100%")
         self.assertTrue( "#ABCDEF" in graph_html )
         
     def test_node_type(self):
@@ -228,7 +228,7 @@ class TestPySTIXView(unittest.TestCase):
         }
         """)
         with self.assertWarns(Warning):
-            self.graph.show_graph(width="100%", height="100%")
+            self.graph.show_graph(name='test.html', width="100%", height="100%")
 
     def test_add_node_fail(self):
         self.graph = PySTIXView(notebook=False)
@@ -239,7 +239,8 @@ class TestPySTIXView(unittest.TestCase):
     def test_show_graph(self):
         self.graph = PySTIXView(notebook=False)
 
-        html = self.graph.show_graph(width="100%",
+        html = self.graph.show_graph(name='test.html',
+                                     width="100%",
                                      height="100%",
                                      show_physics_buttons=True,
                                      show_node_buttons=True,
@@ -249,12 +250,13 @@ class TestPySTIXView(unittest.TestCase):
     def test_show_graph_notebook(self):
         self.graph = PySTIXView(notebook=True)
 
-        html = self.graph.show_graph(width="100%",
+        html = self.graph.show_graph(name='test.html',
+                                     width="100%",
                                      height="100%",
                                      show_physics_buttons=True,
                                      show_node_buttons=True,
                                      show_edge_buttons=True)
-        self.assertTrue( isinstance(html, HTML) )
+        self.assertTrue( isinstance(html, IFrame) )
 
     def test_save_graph_notebook(self):
         self.graph = PySTIXView(notebook=False)
