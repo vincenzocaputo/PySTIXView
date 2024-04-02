@@ -471,6 +471,7 @@ class PySTIXView:
         div_tag['id'] = "code_section"
         div_tag['style'] = "position: absolute;"
         div_tag['style'] += "width: 30%;"
+        div_tag['style'] += "height: 50%;"
         div_tag['style'] += "font-family: monospace;"
         div_tag['style'] += "top: 0; left: 0;"
         div_tag['style'] += "z-index: 1;"
