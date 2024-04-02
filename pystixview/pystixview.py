@@ -3,7 +3,6 @@ import json
 import base64
 import warnings
 import re
-import uuid
 
 from pathlib import Path
 from bs4 import BeautifulSoup
@@ -546,15 +545,15 @@ class PySTIXView:
         """
 
         if self.__notebook:
-            html_graph = self.save_graph(name,
-                                         width,
-                                         height,
-                                         select_menu,
-                                         filter_menu,
-                                         style,
-                                         show_physics_buttons,
-                                         show_node_buttons,
-                                         show_edge_buttons)
+            self.save_graph(name,
+                            width,
+                            height,
+                            select_menu,
+                            filter_menu,
+                            style,
+                            show_physics_buttons,
+                            show_node_buttons,
+                            show_edge_buttons)
             return IFrame(name, width, height)
         else:
             return self._generate_graph(name,
