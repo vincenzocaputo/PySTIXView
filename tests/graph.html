@@ -159,10 +159,11 @@
               const selectedNode = network.getSelectedNodes()[0];
               if (allNodes[selectedNode]) {
                   document.querySelector("#code_section").style.display="block";
-                  document.querySelector("#code_section pre").textContent = 
-                    JSON.stringify(JSON.parse(allNodes[selectedNode].stix), null, 2);
+                  document.querySelector("#code_section pre").textContent =
+                    JSON.stringify(JSON.parse(
+                        allNodes[selectedNode].stix), null, 2);
               }
-          } 
+          }
         })
         </script></body>
 </html>
