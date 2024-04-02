@@ -87,9 +87,11 @@ class PySTIXView:
     def __init__(self, notebook: bool = False):
 
         self.__notebook = notebook
+        self.__network = None
+        self.__icons_path = Path(os.path.dirname(__file__)) / 'icons'
         self.__graph = {
-                'nodes': dict(),
-                'edges': list()
+                'nodes': {},
+                'edges': []
             }
         self.__custom_types = {}
 
@@ -438,8 +440,6 @@ class PySTIXView:
                                  notebook=self.__notebook,
                                  select_menu=select_menu,
                                  filter_menu=filter_menu)
-        self.__icons_path = Path(os.path.dirname(__file__)) / 'icons'
-
 
         self.__network.barnes_hut(gravity=-5000,
                                   central_gravity=0,
@@ -508,7 +508,7 @@ class PySTIXView:
 
         return str(bhtml)
 
-    def show_graph(self, 
+    def show_graph(self,
                    width: str,
                    height: str,
                    select_menu: bool = False,
@@ -554,7 +554,7 @@ class PySTIXView:
             return HTML(html_graph)
         return html_graph
 
-    def save_graph(self, name, 
+    def save_graph(self, name,
                    width: str,
                    height: str,
                    select_menu: bool = False,
