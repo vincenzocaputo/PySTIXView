@@ -3,11 +3,12 @@ import json
 import base64
 import warnings
 import re
+import uuid
 
 from pathlib import Path
 from bs4 import BeautifulSoup
 
-from IPython.display import HTML
+from IPython.display import IFrame
 from pyvis.network import Network
 
 from stix2 import parsing
@@ -392,6 +393,7 @@ class PySTIXView:
             })
 
     def _generate_graph(self,
+                        name: str,
                         width: str,
                         height: str,
                         select_menu: bool = False,
@@ -404,6 +406,7 @@ class PySTIXView:
         In case of Jupyter Notebook, the graph is rendered
         via IPython.display.HTML.
 
+        :param name: Name of the output file that will contain the graph
         :param height: Height of the graph section in px
         :param width: Width of the graph section in px
         :param style: Style of node icons. It can be one of the following:
@@ -425,7 +428,7 @@ class PySTIXView:
              an IPython.display.HTML object is returned
         """
         if style not in self.__STYLES:
-            raise ValueError(f"Invalid style. \
+            raise ValueError(f"Invalid style {style}. \
                     Select from the following: {', '.join(self.__STYLES)}")
 
         if self.__notebook:
@@ -463,7 +466,6 @@ class PySTIXView:
                            edges['to'],
                            edges['type'])
 
-        name = 'stix-graph.html'
         html_graph = self.__network.generate_html(name)
         bhtml = BeautifulSoup(html_graph, 'html.parser')
         div_tag = bhtml.new_tag("div")
@@ -508,6 +510,7 @@ class PySTIXView:
         return str(bhtml)
 
     def show_graph(self,
+                   name: str,
                    width: str,
                    height: str,
                    select_menu: bool = False,
@@ -520,6 +523,7 @@ class PySTIXView:
         In case of Jupyter Notebook, the graph is rendered
         via IPython.display.HTML.
 
+        :param name: Name of the output file that will contain the graph
         :param height: Height of the graph section in px
         :param width: Width of the graph section in px
         :param style: Style of node icons. It can be one of the following:
@@ -541,17 +545,27 @@ class PySTIXView:
              an IPython.display.HTML object is returned
         """
 
-        html_graph = self._generate_graph(width,
-                                          height,
-                                          select_menu,
-                                          filter_menu,
-                                          style,
-                                          show_physics_buttons,
-                                          show_node_buttons,
-                                          show_edge_buttons)
         if self.__notebook:
-            return HTML(html_graph)
-        return html_graph
+            html_graph = self.save_graph(name,
+                                         width,
+                                         height,
+                                         select_menu,
+                                         filter_menu,
+                                         style,
+                                         show_physics_buttons,
+                                         show_node_buttons,
+                                         show_edge_buttons)
+            return IFrame(name, width, height)
+        else:
+            return self._generate_graph(name,
+                                        width,
+                                        height,
+                                        select_menu,
+                                        filter_menu,
+                                        style,
+                                        show_physics_buttons,
+                                        show_node_buttons,
+                                        show_edge_buttons)
 
     def save_graph(self, name,
                    width: str,
@@ -583,7 +597,8 @@ class PySTIXView:
              edge options menu
         """
 
-        html_graph = self._generate_graph(width,
+        html_graph = self._generate_graph(name,
+                                          width,
                                           height,
                                           select_menu,
                                           filter_menu,
