@@ -221,8 +221,8 @@ class PySTIXView:
                     raise TypeError("Provide a valid color in hex rgb format")
             self.__custom_types[custom_type]['label_name'] = label_name
         else:
-            raise ValueError(f"The custom type {custom_type}" \
-                     " is already defined")
+            raise ValueError(f"The custom type {custom_type}"
+                             " is already defined")
 
     def _add_node(self, node_id: str,
                   node: dict,
@@ -241,8 +241,8 @@ class PySTIXView:
                     node_shape = "dot"
                     node_color = self.__custom_types[stix_type]['color']
                 else:
-                    raise KeyError("No image nor color found the" \
-                            f" custom type {stix_type}")
+                    raise KeyError("No image nor color found the"
+                                   f" custom type {stix_type}")
                 label_name = self.__custom_types[stix_type]['label_name']
             else:
                 warnings.warn(f"STIX Object {stix_type} is not defined")
@@ -272,8 +272,8 @@ class PySTIXView:
         elif hasattr(node, 'value') or 'value' in node.keys():
             node_label = node['value']
         else:
-            warnings.warn("STIX Object does not " \
-                    f"contain the field {label_name}")
+            warnings.warn("STIX Object does not "
+                          f"contain the field {label_name}")
             node_label = node['type']
 
         if node_img:
@@ -427,8 +427,8 @@ class PySTIXView:
              an IPython.display.HTML object is returned
         """
         if style not in self.__STYLES:
-            raise ValueError(f"Invalid style {style}." \
-                    f" Select from the following: {', '.join(self.__STYLES)}")
+            raise ValueError(f"Invalid style {style}."
+                             f" Select from the following: {', '.join(self.__STYLES)}")
 
         if self.__notebook:
             self.__network = Network(height, width, directed=True,
