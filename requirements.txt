@@ -29,5 +29,5 @@ stack-data==0.6.3
 stix2==3.0.1
 stix2-patterns==2.0.0
 traitlets==5.14.1
-urllib3==2.2.1
+urllib3==2.2.2
 wcwidth==0.2.13
