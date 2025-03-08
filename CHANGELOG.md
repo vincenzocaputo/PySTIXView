@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changes
 - Bump requests from 2.31.0 to 2.32.2
+- Bump jinja2 from 3.1.4 to 3.1.6
 
 ## [0.1.2] - 2024-07-07
 
