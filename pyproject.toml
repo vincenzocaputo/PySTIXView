@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pystixview"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Vincenzo Caputo <caputo.vincenzo@protonmail.com>"]
 description = "A Python library to create and display STIX2 graphs"
 license = "BSD 3-Clause"
