@@ -24,7 +24,7 @@ pip install PySTIXview
 ```
 git clone https://github.com/vincenzocaputo/PySTIXView
 cd PySTIXView
-python3 setup.py install
+pip install .
 ```
 
 ## Usage
