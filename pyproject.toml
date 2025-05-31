@@ -6,13 +6,17 @@ authors = ["Vincenzo Caputo <caputo.vincenzo@protonmail.com>"]
 license = "BSD 3-Clause"
 readme = "README.md"
 documentation = "https://pystixview.readthedocs.io"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 
 [tool.poetry.urls]
 Homepage = "https://github.com/vincenzocaputo/PySTIXView"
 Issues = "https://github.com/vincenzocaputo/PySTIXView/issues"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 stix2 = "^3.0.1"
 pyvis = "^0.3.2"
 ipython = "^8.23.0"
