@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump h11 from 0.14.0 to 0.16.0
 - Bump jupyterlab from 4.1.5 to 4.2.5
 - Bump zipp from 3.18.1 to 3.19.1
+- Bump cryptography from 42.0.5 to 44.0.1 
 
 ## [0.1.4] - 2025-05-31
 
