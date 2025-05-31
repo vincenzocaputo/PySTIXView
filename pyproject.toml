@@ -5,7 +5,6 @@ authors = [
   { name="Vincenzo Caputo", email="caputo.vincenzo@protonmail.com" },
 ]
 description = "A Python library to create and display STIX2 graphs"
-authors = ["Vincenzo Caputo <caputo.vincenzo@protonmail.com>"]
 license = "BSD 3-Clause"
 readme = "README.md"
 documentation = "https://pystixview.readthedocs.io"
