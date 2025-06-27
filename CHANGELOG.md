@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.6] - 2025-05-31
+## [0.1.7] - 2025-06-27
+
+### Changes
+- Bump requests from 2.31.0 to 2.32.4
+- Bump jupyter_core to 5.8.1
+
+## [0.1.6] - 2025-06-27
 
 ### Fix
 - Node size based on 'value' field
