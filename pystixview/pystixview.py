@@ -281,13 +281,13 @@ class PySTIXView:
                                     shape=node_shape,
                                     image=node_img,
                                     label=node_label,
-                                    **node)
+                                    stix=node['stix'])
         else:
             self.__network.add_node(node_id,
                                     shape=node_shape,
                                     label=node_label,
                                     color=node_color,
-                                    **node)
+                                    stix=node['stix'])
 
     def add_node(self,
                  stix_obj: AttackPattern | Campaign | CourseOfAction |

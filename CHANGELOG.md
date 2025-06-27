@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2025-05-31
+
+### Fix
+- Node size based on 'value' field
+
+### Changes
+- Bump urllib3 from 2.2.2 to 2.5.0
+- Bump requests from 2.32.2 to 2.32.4
+- Bump certifi from 2024.7.4 to 2025.6.15
+- Bump idna from 3.7 to 3.10
+- Update other dependencies
+
+
 ## [0.1.5] - 2025-05-31
 
 ### Changes
