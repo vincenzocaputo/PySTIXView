@@ -30,7 +30,7 @@ requests==2.32.4
 simplejson==3.19.2
 six==1.16.0
 snowballstemmer==2.2.0
-soupsieve==2.5
+soupsieve==2.8.4
 Sphinx==7.2.6
 sphinx-autodoc-typehints==2.0.0
 sphinx-markdown-builder==0.6.6
